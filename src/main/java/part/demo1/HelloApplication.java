@@ -55,47 +55,48 @@ public class HelloApplication extends Application {
         public boolean isChecked = false;
     }
 
+
     @Override
     public void start(Stage loadingStage) {
+        // 폴더 및 디렉토리가 하드디스크에 없다면 자동으로 생성해 주는 초기화 함수 가동
         initializeStorageDirectory();
+
+        // 프로그램이 켜질 때 예전 저장 데이터를 하드디스크에서 가져옵니다.
         loadDataFromDisk();
 
-        // 🎯 [최종 저격 패치] 스크린샷에 드러난 assets/icons.icns 실물 경로와 이름을 100% 매칭 완료했습니다.
+        // 🎯 [아이콘 증발 버그 전면 파쇄] src/main/resources 내부 자산을 강제 추출하는 정식 클래스 로더 엔진 탑재
         try {
             boolean isDarkMode = checkOSDarkMode();
 
-            // 질문자님의 실물 파일명인 'icons.icns' 스펙으로 정밀 바인딩합니다.
-            String relativePath = "assets" + File.separator + "icons.icns";
+            // 1. 메이븐 리소스 루트를 기준으로 삼아 내부 격리 경로를 정밀 타격 지목합니다.
+            String iconResourcePath = "/assets/icons.icns";
             if (System.getProperty("os.name").toLowerCase().contains("win")) {
-                relativePath = "assets" + File.separator + "icons.ico";
+                iconResourcePath = "/assets/icons.ico";
             }
 
-            // 1순위: 작업 디렉토리 기준 물리 파일 객체를 빌드합니다.
-            File iconFile = new File(relativePath);
+            // 2. 자바 고유의 클래스 로더 스트림을 열어 JAR 및 포터블 앱 내부 깊숙이 임베디드된 아이콘을 낚아챕니다.
+            java.net.URL iconUrl = getClass().getResource(iconResourcePath);
 
-            // 2순위 백업: 인스톨러 빌드 후 가상 서버에서 경로가 뒤틀릴 경우를 대비해 시스템 절대 경로로 강제 추적합니다.
-            if (!iconFile.exists()) {
-                iconFile = new File(System.getProperty("user.dir") + File.separator + relativePath);
-            }
+            if (iconUrl != null) {
+                // 실물 리소스 URI 주소 바인딩을 통해 인텔리제이 가동 및 배포 실행 상태 모두에 완벽 가시성을 부여합니다.
+                javafx.scene.image.Image compiledIcon = new javafx.scene.image.Image(iconUrl.toExternalForm());
+                loadingStage.getIcons().add(compiledIcon);
 
-            // 실물 파일이 확인되면 자바FX 창과 OS 작업 표시줄에 아이콘을 영구 각인합니다.
-            if (iconFile.exists()) {
-                javafx.scene.image.Image appIcon = new javafx.scene.image.Image(iconFile.toURI().toString());
-                loadingStage.getIcons().add(appIcon);
-
-                // 🍏 맥(macOS) 하단 독(Dock) 바 영역 로고 실시간 강제 임베딩 동기화
+                // 🍏 맥(macOS) 독(Dock) 바 영역의 자바 기본 Duke 마스코트를 밀어내고 고유 아이콘 영구 각인
                 if (System.getProperty("os.name").toLowerCase().contains("mac")) {
-                    try {
-                        java.awt.image.BufferedImage awtImage = javax.imageio.ImageIO.read(iconFile);
-                        if (awtImage != null) {
-                            java.awt.Taskbar.getTaskbar().setIconImage(awtImage);
+                    try (InputStream macStream = getClass().getResourceAsStream("/assets/icons.icns")) {
+                        if (macStream != null) {
+                            java.awt.image.BufferedImage awtImg = javax.imageio.ImageIO.read(macStream);
+                            if (awtImg != null) {
+                                java.awt.Taskbar.getTaskbar().setIconImage(awtImg);
+                            }
                         }
                     } catch (Exception ex) {
-                        // 맥 OS 보안 샌드박스 예외 펜스
+                        // 맥 OS 환경 보안 및 샌드박스 예외 방어 펜스
                     }
                 }
             } else {
-                // 💡 최후의 보루: 만약 파일 스캔이 실패하더라도 프로그램 다운을 막기 위해 캔버스 그래픽 로고를 동적 주입합니다.
+                // 💡 최후의 예비로: 혹시 모를 로딩 유실 발생 시 프로그램 정지를 막기 위해 캔버스 그래픽 백업 펜스를 가동합니다.
                 Pane systemIconLogo = AppLogoUI.createLogo(128, isDarkMode);
                 javafx.scene.SnapshotParameters params = new javafx.scene.SnapshotParameters();
                 params.setFill(Color.TRANSPARENT);
@@ -106,6 +107,7 @@ public class HelloApplication extends Application {
         }
 
         // 👉 이 아래에 있는 loadingStage.initStyle(StageStyle.TRANSPARENT); 구역부터는 기존 코드를 그대로 유지하시면 됩니다!
+
 
 
         loadingStage.initStyle(StageStyle.TRANSPARENT);

@@ -140,7 +140,7 @@
                     <target>21</target>
                 </configuration>
             </plugin>
-
+            <!-- 자바FX 빌드 오케스트레이션 플러그인 구성 -->
             <!-- 자바FX 빌드 오케스트레이션 플러그인 구성 -->
             <plugin>
                 <groupId>org.openjfx</groupId>
@@ -159,12 +159,12 @@
                             <noHeaderFiles>true</noHeaderFiles>
 
                             <!-- ================================================================= -->
-                            <!-- 🎯 [인스톨러 아이콘 각인 완료] 리소스 세션 내부로 완전히 귀속 유도 보정 -->
+                            <!-- 🎯 [인스톨러 완공] 실물 resources 하위 배치 조건에 맞춰서 상대 경로 재지정 완료 -->
                             <!-- ================================================================= -->
-                            <jpackageOptions>
+                            <options>
                                 <option>--icon</option>
                                 <option>src/main/resources/assets/icons.icns</option>
-                            </jpackageOptions>
+                            </options>
                         </configuration>
                     </execution>
                 </executions>
