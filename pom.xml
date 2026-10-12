@@ -153,7 +153,7 @@
                         <!-- Default configuration for running with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <!-- 🟢 [수정 완료] 메인 진입 경로를 Launcher 클래스로 우회 지정하여 윈도우 실행 팅김 에러를 해결합니다. -->
+                            <!-- 🟢 메인 진입 경로를 Launcher 클래스로 우회 지정하여 윈도우 실행 팅김 에러를 해결합니다. -->
                             <mainClass>part.demo1.Launcher</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
@@ -161,6 +161,14 @@
                             <noManPages>true</noManPages>
                             <stripDebug>true</stripDebug>
                             <noHeaderFiles>true</noHeaderFiles>
+
+                            <!-- ================================================================= -->
+                            <!-- 🎯 [아이콘 버그 완전 분쇄] 윈도우 및 맥OS 설치 파일 아이콘 영구 각인 옵션 주입 -->
+                            <!-- ================================================================= -->
+                            <options>
+                                <option>--icon</option>
+                                <option>${project.basedir}/src/main/resources/icon.icns</option>
+                            </options>
                         </configuration>
                     </execution>
                 </executions>
