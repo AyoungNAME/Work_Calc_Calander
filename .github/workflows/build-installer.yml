@@ -8,7 +8,7 @@ on:
 
 jobs:
   # -----------------------------------------------------------------
-  # 1. 윈도우용 .exe 빌드 환경 (공식 .ico 아이콘 탑재 완료)
+  # 1. 윈도우용 .exe 빌드 환경 (경로 오토 핏 완비)
   # -----------------------------------------------------------------
   build-windows:
     runs-on: windows-latest
@@ -32,9 +32,11 @@ jobs:
           .\mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Windows EXE Installer
+        # 🟢 [경로 버그 패치] 하위 폴더 깊이에 상관없이 assets 폴더를 찾아내어 현재 빌드 루트(target/libs)로 아이콘을 자동 복사해옵니다.
         run: |
           copy target\demo1-1.0-SNAPSHOT.jar target\libs\
-          jpackage --type exe --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --win-dir-chooser --win-shortcut --icon assets/Work-Calc-Calendar.ico
+          powershell -Command "Get-ChildItem -Recurse -Filter 'Work-Calc-Calendar.ico' | Select-Object -First 1 | Foreach-Object { Copy-Item \$_.FullName -Destination 'target/libs/icon.ico' }"
+          jpackage --type exe --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --win-dir-chooser --win-shortcut --icon target/libs/icon.ico
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
@@ -43,7 +45,7 @@ jobs:
           path: ./*.exe
 
   # -----------------------------------------------------------------
-  # 2. 맥용 .dmg 빌드 환경 (공식 .icns 아이콘 탑재 완료)
+  # 2. 맥용 .dmg 빌드 환경 (경로 오토 핏 완비)
   # -----------------------------------------------------------------
   build-mac:
     runs-on: macos-latest
@@ -68,9 +70,11 @@ jobs:
           ./mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Mac DMG Installer
+        # 🟢 [경로 버그 패치] 맥 환경에서도 동일하게 find 커맨드를 통해 .icns 파일을 스스로 추적하여 런타임에 결합합니다.
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
-          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon assets/Work-Calc-Calendar.icns
+          find . -name "Work-Calc-Calendar.icns" -exec cp {} target/libs/icon.icns \;
+          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon target/libs/icon.icns
 
       - name: Upload Mac Artifact
         uses: actions/upload-artifact@v4
