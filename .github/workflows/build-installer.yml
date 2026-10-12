@@ -8,7 +8,7 @@ on:
 
 jobs:
   # -----------------------------------------------------------------
-  # 1. 윈도우용 .exe 빌드 환경 (물리 .ico 자산 정밀 맵핑)
+  # 1. 윈도우용 .exe 빌드 환경 (경로 충돌 에러 원천 분쇄)
   # -----------------------------------------------------------------
   build-windows:
     runs-on: windows-latest
@@ -32,12 +32,11 @@ jobs:
           .\mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Windows EXE Installer
-        # 🟢 [윈도우 픽스] 프로젝트 최상단 하위 공간을 전체 순회 탐색하여
-        # assets/Work-Calc-Calendar.ico 실물 파일을 jpackage --icon 옵션에 무결점으로 다이렉트 직통 바인딩합니다.
+        # 🟢 [버그 해결 핵심] 에러를 유발하던 복잡한 PowerShell 복사 스크립트를 완전히 걷어냈습니다!
+        # 질문자님이 assets 폴더에 .ico 파일을 잘 넣어두셨기 때문에, jpackage가 assets/Work-Calc-Calendar.ico를 다이렉트로 인식하도록 다이렉트 경로를 바인딩했습니다.
         run: |
           copy target\demo1-1.0-SNAPSHOT.jar target\libs\
-          powershell -Command "Get-ChildItem -Recurse -Filter '*Work-Calc-Calendar.ico' | Select-Object -First 1 | Foreach-Object { Copy-Item \$_.FullName -Destination 'target/libs/icon.ico' }"
-          jpackage --type exe --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --win-dir-chooser --win-shortcut --icon target/libs/icon.ico
+          jpackage --type exe --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --win-dir-chooser --win-shortcut --icon assets/Work-Calc-Calendar.ico
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
@@ -46,7 +45,7 @@ jobs:
           path: ./*.exe
 
   # -----------------------------------------------------------------
-  # 2. 맥용 .dmg 빌드 환경 (물리 .icns 자산 정밀 맵핑)
+  # 2. 맥용 .dmg 빌드 환경 (물리 .icns 자산 다이렉트 맵핑)
   # -----------------------------------------------------------------
   build-mac:
     runs-on: macos-latest
@@ -71,12 +70,10 @@ jobs:
           ./mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Mac DMG Installer
-        # 🟢 [맥 픽스] 맥 가상 환경에서도 하위 중복 폴더의 깊이에 관계없이
-        # assets/Work-Calc-Calendar.icns 물리 파일을 스스로 역추적하여 jpackage --icon 수거 구역에 안전하게 결합합니다.
+        # 🟢 맥 환경에서도 복잡한 검색 없이 우리가 심어둔 assets/Work-Calc-Calendar.icns 주소를 다이렉트로 타깃팅합니다.
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
-          find . -name "*Work-Calc-Calendar.icns" -exec cp {} target/libs/icon.icns \;
-          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon target/libs/icon.icns
+          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon assets/Work-Calc-Calendar.icns
 
       - name: Upload Mac Artifact
         uses: actions/upload-artifact@v4
