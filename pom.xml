@@ -4,6 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+
     <groupId>part</groupId>
     <artifactId>demo1</artifactId>
     <version>1.0-SNAPSHOT</version>
@@ -157,11 +158,13 @@
                             <stripDebug>true</stripDebug>
                             <noHeaderFiles>true</noHeaderFiles>
 
+                            <!-- ================================================================= -->
+                            <!-- 🎯 [인스톨러 아이콘 각인 완료] 리소스 세션 내부로 완전히 귀속 유도 보정 -->
+                            <!-- ================================================================= -->
                             <jpackageOptions>
                                 <option>--icon</option>
-                                <option>assets/icons.icns</option>
+                                <option>src/main/resources/assets/icons.icns</option>
                             </jpackageOptions>
-
                         </configuration>
                     </execution>
                 </executions>
