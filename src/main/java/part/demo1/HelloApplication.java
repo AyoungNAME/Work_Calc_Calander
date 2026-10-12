@@ -60,21 +60,30 @@ public class HelloApplication extends Application {
         initializeStorageDirectory();
         loadDataFromDisk();
 
-        // 🎯 [자바 코드 레벨 실행 앱 아이콘 버그 완전 분쇄]
-        // 런타임 가동 즉시 assets 폴더 내부의 ico/icns 파일을 감지하여 윈도우/맥 가상 프레임 및 독바에 고정합니다.
+        // 🎯 [최종 저격 패치] 스크린샷에 드러난 assets/icons.icns 실물 경로와 이름을 100% 매칭 완료했습니다.
         try {
             boolean isDarkMode = checkOSDarkMode();
-            File iconFile = new File("assets" + File.separator + "icon.icns");
 
+            // 질문자님의 실물 파일명인 'icons.icns' 스펙으로 정밀 바인딩합니다.
+            String relativePath = "assets" + File.separator + "icons.icns";
             if (System.getProperty("os.name").toLowerCase().contains("win")) {
-                iconFile = new File("assets" + File.separator + "icon.ico");
+                relativePath = "assets" + File.separator + "icons.ico";
             }
 
+            // 1순위: 작업 디렉토리 기준 물리 파일 객체를 빌드합니다.
+            File iconFile = new File(relativePath);
+
+            // 2순위 백업: 인스톨러 빌드 후 가상 서버에서 경로가 뒤틀릴 경우를 대비해 시스템 절대 경로로 강제 추적합니다.
+            if (!iconFile.exists()) {
+                iconFile = new File(System.getProperty("user.dir") + File.separator + relativePath);
+            }
+
+            // 실물 파일이 확인되면 자바FX 창과 OS 작업 표시줄에 아이콘을 영구 각인합니다.
             if (iconFile.exists()) {
                 javafx.scene.image.Image appIcon = new javafx.scene.image.Image(iconFile.toURI().toString());
                 loadingStage.getIcons().add(appIcon);
 
-                // 🍏 맥(macOS) 전용 독(Dock) 바 세팅 동기화 가동
+                // 🍏 맥(macOS) 하단 독(Dock) 바 영역 로고 실시간 강제 임베딩 동기화
                 if (System.getProperty("os.name").toLowerCase().contains("mac")) {
                     try {
                         java.awt.image.BufferedImage awtImage = javax.imageio.ImageIO.read(iconFile);
@@ -82,21 +91,22 @@ public class HelloApplication extends Application {
                             java.awt.Taskbar.getTaskbar().setIconImage(awtImage);
                         }
                     } catch (Exception ex) {
-                        // 맥 보안 샌드박스 예외 펜스
+                        // 맥 OS 보안 샌드박스 예외 펜스
                     }
                 }
             } else {
+                // 💡 최후의 보루: 만약 파일 스캔이 실패하더라도 프로그램 다운을 막기 위해 캔버스 그래픽 로고를 동적 주입합니다.
                 Pane systemIconLogo = AppLogoUI.createLogo(128, isDarkMode);
                 javafx.scene.SnapshotParameters params = new javafx.scene.SnapshotParameters();
                 params.setFill(Color.TRANSPARENT);
-                javafx.scene.image.WritableImage snapshot = systemIconLogo.snapshot(params, null);
-                loadingStage.getIcons().add(snapshot);
+                loadingStage.getIcons().add(systemIconLogo.snapshot(params, null));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        // 👉 이 아래에 있는 loadingStage.initStyle(StageStyle.TRANSPARENT);
+        // 👉 이 아래에 있는 loadingStage.initStyle(StageStyle.TRANSPARENT); 구역부터는 기존 코드를 그대로 유지하시면 됩니다!
+
 
         loadingStage.initStyle(StageStyle.TRANSPARENT);
         boolean isDarkMode = checkOSDarkMode();

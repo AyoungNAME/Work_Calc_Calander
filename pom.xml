@@ -157,13 +157,11 @@
                             <stripDebug>true</stripDebug>
                             <noHeaderFiles>true</noHeaderFiles>
 
-                            <!-- ================================================================= -->
-                            <!-- 🎯 [인스톨러 아이콘 버그 완전 해결] assets 폴더 내부 타깃 경로 바인딩 고정 -->
-                            <!-- ================================================================= -->
                             <jpackageOptions>
                                 <option>--icon</option>
-                                <option>${project.basedir}/assets/icon.icns</option>
+                                <option>assets/icons.icns</option>
                             </jpackageOptions>
+
                         </configuration>
                     </execution>
                 </executions>
