@@ -25,10 +25,9 @@ public class HelloApplication extends Application {
     private double xOffset = 0;
     private double yOffset = 0;
 
-    // 📂 [제안 주신 최적의 경로 패치 완비] ~/Documents/TheProject/Saved Calendars/ 하위 폴더 내부 세팅
+    // 📂 문서 폴더 하위에 새로운 앱 명칭으로 저장 폴더 트리를 완전 자동 빌드합니다.
     private static final String STORAGE_DIR_PATH = System.getProperty("user.home") + File.separator
-            + "Documents" + File.separator + "TheProject" + File.separator + "Saved Calendars";
-    private static final String SAVE_FILE_PATH = STORAGE_DIR_PATH + File.separator + "the_project_storage.dat";
+            + "Documents" + File.separator + "Work Calc Calendar" + File.separator + "Saved Calendars";
 
     private Map<String, ProjectData> projectStorage = new HashMap<>();
     private YearMonth currentYearMonth = YearMonth.now();
@@ -36,22 +35,22 @@ public class HelloApplication extends Application {
     // [데이터 저장소] 프로젝트 이름을 관리하는 클래스
     public static class ProjectData implements Serializable {
         private static final long serialVersionUID = 500L;
-        String projectName;
-        Map<String, TimeRecord> dateRecords = new HashMap<>();
+        public String projectName;
+        public Map<String, TimeRecord> dateRecords = new HashMap<>();
 
         public ProjectData(String projectName) {
             this.projectName = projectName;
         }
     }
 
-    // [시간 데이터 구조] 사용자가 저장한 3가지 형태의 데이터를 담는 바구니
+    // [시간 데이터 구조] 사용자가 저장한 데이터 바구니
     public static class TimeRecord implements Serializable {
         private static final long serialVersionUID = 500L;
-        String type;        // "FROM_TO" or "TOTAL" or "CHECKED"
-        String fromTime = "";
-        String toTime = "";
-        String totalTime = "";
-        boolean isChecked = false;
+        public String type = "";        // "FROM_TO" or "TOTAL" or "CHECKED"
+        public String fromTime = "";
+        public String toTime = "";
+        public String totalTime = "";
+        public boolean isChecked = false;
     }
 
     @Override
@@ -61,6 +60,31 @@ public class HelloApplication extends Application {
 
         // 프로그램이 켜질 때 예전 저장 데이터를 하드디스크에서 가져옵니다.
         loadDataFromDisk();
+
+        // 🟢 [시스템 아이콘 알파 채널 투명화 보정 엔진]
+        // 스냅샷 생성 시 투명 채널(Color.TRANSPARENT)을 강제 주입하여 외곽의 흰색 사각형을 파쇄합니다.
+        try {
+            Pane systemIconLogo = AppLogoUI.createLogo(128, checkOSDarkMode());
+
+            // 🎯 스냅샷 매개변수에 투명 배경 채널을 명시적으로 선언합니다. (흰색 배경 제거 핵심)
+            javafx.scene.SnapshotParameters params = new javafx.scene.SnapshotParameters();
+            params.setFill(Color.TRANSPARENT);
+
+            javafx.scene.image.WritableImage snapshot = systemIconLogo.snapshot(params, null);
+            loadingStage.getIcons().add(snapshot);
+
+            // 맥(macOS) 독(Dock) 바 영역 알파 투명도 연동 동기화
+            if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+                try {
+                    java.awt.image.BufferedImage awtImage = javafx.embed.swing.SwingFXUtils.fromFXImage(snapshot, null);
+                    java.awt.Taskbar.getTaskbar().setIconImage(awtImage);
+                } catch (Exception ex) {
+                    // 맥 환경 보안 및 버전에 따른 예외 펜스
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         loadingStage.initStyle(StageStyle.TRANSPARENT);
         boolean isDarkMode = checkOSDarkMode();
@@ -98,19 +122,18 @@ public class HelloApplication extends Application {
         delay.play();
     }
 
-    // 폴더 부재 시 강제 생성 로직 추가
+
     private void initializeStorageDirectory() {
         try {
             File dir = new File(STORAGE_DIR_PATH);
             if (!dir.exists()) {
-                dir.mkdirs(); // 계층형 하위 폴더 트리 통째로 강제 빌드
+                dir.mkdirs();
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    // 내 컴퓨터가 다크모드인지 감지하는 로직
     private boolean checkOSDarkMode() {
         String os = System.getProperty("os.name").toLowerCase();
         try {
@@ -133,7 +156,6 @@ public class HelloApplication extends Application {
         return false;
     }
 
-    // 메인 홈 화면 (New File / Continue File 선택창)
     private void showMainWindow(boolean isDarkMode) {
         try {
             Stage mainStage = new Stage();
@@ -170,9 +192,11 @@ public class HelloApplication extends Application {
                 mainStage.setY(event.getScreenY() - yOffset);
             });
 
-            javafx.scene.text.Text topCenterText = new javafx.scene.text.Text("The Project");
+            javafx.scene.text.Text topCenterText = new javafx.scene.text.Text("Work Calc Calendar");
             topCenterText.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-fill: " + textColor + ";");
-            VBox textContainer = new VBox(topCenterText);
+
+            Pane mainAppLogo = AppLogoUI.createLogo(70, isDarkMode);
+            VBox textContainer = new VBox(15, mainAppLogo, topCenterText);
             textContainer.setAlignment(Pos.TOP_CENTER);
             textContainer.setPadding(new Insets(40, 0, 0, 0));
 
@@ -204,32 +228,79 @@ public class HelloApplication extends Application {
             wrapperLayout.setTop(customHeader);
             wrapperLayout.setCenter(textContainer);
             wrapperLayout.setBottom(bottomButtonContainer);
-
             Scene scene = new Scene(wrapperLayout, 600, 400);
             scene.setFill(Color.TRANSPARENT);
             mainStage.setScene(scene);
             mainStage.show();
         } catch (Exception e) { e.printStackTrace(); }
     }
-
     private void handleNewCalendarWindow(Stage ownerStage, boolean isDarkMode) {
-        TextInputDialog dialog = new TextInputDialog("UntitledCalendar");
-        dialog.setTitle("New Calendar File");
-        dialog.setHeaderText("Create a new work session name:");
-        dialog.setContentText("Name:");
-        dialog.initOwner(ownerStage);
-
-        // [정정 완료] Optional에 <String> 타입을 확실하게 명시하여 컴파일러 오류를 파쇄했습니다.
-        Optional<String> result = dialog.showAndWait();
-
-        if (result.isPresent() && !result.get().trim().isEmpty()) {
-            String projectName = result.get().trim();
-            ProjectData newData = new ProjectData(projectName);
-            projectStorage.put(projectName, newData);
-            saveDataToDisk();
-            openCalendarWindow(ownerStage, isDarkMode, newData);
-        }
+        Stage dialogStage = new Stage();
+        dialogStage.initOwner(ownerStage);
+        dialogStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+        dialogStage.initStyle(StageStyle.TRANSPARENT);
+        String bg = isDarkMode ? "#252526" : "#FAFAFA";
+        String txtColor = isDarkMode ? "#FFFFFF" : "#111111";
+        String inputBg = isDarkMode ? "#3E3E3F" : "#FFFFFF";
+        String inputBorder = isDarkMode ? "#555555" : "#CCCCCC";
+        VBox layout = new VBox(20);
+        layout.setPadding(new Insets(25));
+        layout.setStyle("-fx-background-color: " + bg + "; -fx-background-radius: 15px; -fx-border-radius: 15px; "
+                + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 12, 0, 0, 0);");
+        Label mainPrompt = new Label("Create a new work session name");
+        mainPrompt.setStyle("-fx-text-fill: " + txtColor + "; -fx-font-size: 15px; -fx-font-weight: bold;");
+        TextField nameField = new TextField("UntitledCalendar");
+        nameField.setPrefHeight(35);
+        nameField.setStyle("-fx-background-color: " + inputBg + "; -fx-text-fill: " + txtColor + "; "
+                + "-fx-border-color: " + inputBorder + "; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-padding: 0 10 0 10; -fx-font-size: 13px;");
+        nameField.setOnMouseEntered(e -> {
+            if (!nameField.isFocused()) nameField.setStyle(nameField.getStyle().replace("-fx-border-color: " + inputBorder, "-fx-border-color: #FF9100;"));
+        });
+        nameField.setOnMouseExited(e -> {
+            if (!nameField.isFocused()) nameField.setStyle(nameField.getStyle().replace("-fx-border-color: #FF9100;", "-fx-border-color: " + inputBorder + ";"));
+        });
+        Button cancelBtn = new Button("Cancel");
+        Button okBtn = new Button("OK");
+        cancelBtn.setPrefSize(100, 35);
+        okBtn.setPrefSize(100, 35);
+        String cancelStyle = "-fx-background-color: " + (isDarkMode ? "#3E3E3F" : "#EAEAEA") + "; -fx-text-fill: " + txtColor + "; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 6px;";
+        String okStyle = "-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 6px;";
+        cancelBtn.setStyle(cancelStyle);
+        okBtn.setStyle(okStyle);
+        cancelBtn.setOnMouseEntered(e -> cancelBtn.setStyle(cancelStyle + "-fx-background-color: " + (isDarkMode ? "#505052" : "#DCDCDC") + ";"));
+        cancelBtn.setOnMouseExited(e -> cancelBtn.setStyle(cancelStyle));
+        okBtn.setOnMouseEntered(e -> okBtn.setStyle(okStyle + "-fx-background-color: #1976D2;"));
+        okBtn.setOnMouseExited(e -> okBtn.setStyle(okStyle));
+        HBox btnBox = new HBox(12, cancelBtn, okBtn);
+        btnBox.setAlignment(Pos.CENTER_RIGHT);
+        Pane modalMinLogo = AppLogoUI.createLogo(45, isDarkMode);
+        layout.getChildren().addAll(modalMinLogo, mainPrompt, nameField, btnBox);
+        layout.setOnMousePressed(e -> {
+            xOffset = e.getSceneX();
+            yOffset = e.getSceneY();
+        });
+        layout.setOnMouseDragged(e -> {
+            dialogStage.setX(e.getScreenX() - xOffset);
+            dialogStage.setY(e.getScreenY() - yOffset);
+        });
+        cancelBtn.setOnAction(e -> dialogStage.close());
+        okBtn.setOnAction(e -> {
+            String projectName = nameField.getText().trim();
+            if (!projectName.isEmpty()) {
+                ProjectData newData = new ProjectData(projectName);
+                projectStorage.put(projectName, newData);
+                saveDataToDisk();
+                dialogStage.close();
+                openCalendarWindow(ownerStage, isDarkMode, newData);
+            }
+        });
+        nameField.setOnAction(e -> okBtn.getOnAction().handle(e));
+        Scene scene = new Scene(layout, 380, 220);
+        scene.setFill(Color.TRANSPARENT);
+        dialogStage.setScene(scene);
+        dialogStage.showAndWait();
     }
+    // 📂 기존 파일 불러오기 및 스캔 관리 패널 창 (제네릭 가이드 완비 버전)
     private void handleContinueFileWindow(Stage ownerStage, boolean isDarkMode) {
         Stage selectionStage = new Stage();
         selectionStage.initStyle(StageStyle.TRANSPARENT);
@@ -238,25 +309,20 @@ public class HelloApplication extends Application {
         String bg = isDarkMode ? "#222222" : "#F5F5F5";
         String txtColor = isDarkMode ? "white" : "black";
         layout.setStyle("-fx-background-color: " + bg + "; -fx-background-radius: 15px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
+
         Label titleLabel = new Label("Select File to Continue");
         titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: " + txtColor + ";");
-        titleLabel.setPadding(new Insets(15, 0, 10, 15));
 
-        // [형변환 패치 완료] 명시적으로 제네릭 타입을 정의
+        // 🟢 <String> 제네릭을 확실하게 명시하여 380, 393번 에러 라인을 완전히 파쇄합니다.
         ListView<String> projectListView = new ListView<>();
-
-        // ⭐ 원본 그대로 순수한 프로젝트 이름 키셋만 담아줍니다 (이렇게 해야 파일 매칭 버그가 안 납니다!)
         projectListView.getItems().addAll(projectStorage.keySet());
 
-        // 🎨 [UI 렌더링 및 은은한 경계선 패치]
-        // 내부 데이터(String)는 오직 프로젝트 이름만 갖고 있으되, 화면에 그려질 때만 임시로 계산해서 예쁜 색과 구분선을 그려줍니다.
+        // 🟢 ListCell에도 <String> 제네릭 유형을 바인딩하여 321번 자바 오버라이드 규칙 위반을 완전히 정복합니다.
         projectListView.setCellFactory(lv -> new ListCell<String>() {
             private final Label mainPart = new Label();
             private final Label slashPart = new Label(" / ");
             private final Label daysPart = new Label();
             private final HBox rowContainer = new HBox(mainPart, slashPart, daysPart);
-
-            // 완벽하다고 말씀해 주신 은은한 경계선 패널 객체
             private final Region separatorLine = new Region();
             private final VBox totalCellLayout = new VBox(rowContainer, separatorLine);
 
@@ -264,8 +330,6 @@ public class HelloApplication extends Application {
                 rowContainer.setAlignment(Pos.CENTER_LEFT);
                 rowContainer.setSpacing(2);
                 rowContainer.setPadding(new Insets(8, 12, 8, 12));
-
-                // 경계선 두께 및 테마별 색상 고정
                 separatorLine.setPrefHeight(1);
                 separatorLine.setMaxWidth(Double.MAX_VALUE);
                 separatorLine.setStyle("-fx-background-color: " + (isDarkMode ? "#383838" : "#E0E0E0") + ";");
@@ -275,22 +339,16 @@ public class HelloApplication extends Application {
             @Override
             protected void updateItem(String pName, boolean empty) {
                 super.updateItem(pName, empty);
-
                 if (empty || pName == null) {
-                    setText(null);
-                    setGraphic(null);
-                    setStyle("-fx-background-color: transparent;");
+                    setText(null); setGraphic(null); setStyle("-fx-background-color: transparent;");
                 } else {
-                    setText(null); // 원본 기본 문자열 노출 차단
-
-                    // 💡 프로젝트 이름을 토대로 맵에서 실시간 시간 통계를 계산해 냅니다.
+                    setText(null);
                     ProjectData pData = projectStorage.get(pName);
                     int totalMins = 0;
                     if (pData != null && pData.dateRecords != null) {
                         for (TimeRecord rec : pData.dateRecords.values()) {
-                            if ("CHECKED".equals(rec.type)) {
-                                totalMins += (8 * 60);
-                            } else if ("FROM_TO".equals(rec.type)) {
+                            if ("CHECKED".equals(rec.type)) totalMins += (8 * 60);
+                            else if ("FROM_TO".equals(rec.type)) {
                                 int start = parseTimeStringToMinutes(rec.fromTime);
                                 int end = parseTimeStringToMinutes(rec.toTime);
                                 if (end >= start) totalMins += (end - start);
@@ -302,38 +360,28 @@ public class HelloApplication extends Application {
 
                     int hours = totalMins / 60;
                     int mins = totalMins % 60;
-                    int days = hours / 8; // 8시간 기준 1일
+                    int days = hours / 8;
 
-                    // 텍스트 내용 실시간 세팅
                     mainPart.setText(String.format("%s — %d Hrs %02d Mins", pName, hours, mins));
                     daysPart.setText(String.format("%d Days", days));
-
                     mainPart.setFont(Font.font("System", FontWeight.BOLD, 13));
                     slashPart.setFont(Font.font("System", FontWeight.NORMAL, 13));
                     daysPart.setFont(Font.font("System", FontWeight.BOLD, 13));
 
-                    // 클릭 선택(isSelected) 상태에 맞춰 색상 세트 적용 및 인라인 스타일 강제 고정 (깜빡임 완전 방지)
                     if (isSelected()) {
-                        separatorLine.setVisible(false); // 선택 항목 바로 밑의 라인은 숨김 처리
+                        separatorLine.setVisible(false);
                         if (isDarkMode) {
                             rowContainer.setStyle("-fx-background-color: #1A1A1A; -fx-background-radius: 4px; -fx-border-color: #FF9100; -fx-border-width: 1px; -fx-border-radius: 4px;");
-                            mainPart.setStyle("-fx-text-fill: #E0E0E0;");
-                            slashPart.setStyle("-fx-text-fill: #666666;");
-                            daysPart.setStyle("-fx-text-fill: #B0BEC5;");
+                            mainPart.setStyle("-fx-text-fill: #E0E0E0;"); slashPart.setStyle("-fx-text-fill: #666666;"); daysPart.setStyle("-fx-text-fill: #B0BEC5;");
                         } else {
                             rowContainer.setStyle("-fx-background-color: #F0F0F0; -fx-background-radius: 4px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.18), 6, 0, 0, 2);");
-                            mainPart.setStyle("-fx-text-fill: #222222;");
-                            slashPart.setStyle("-fx-text-fill: #888888;");
-                            daysPart.setStyle("-fx-text-fill: #000000;");
+                            mainPart.setStyle("-fx-text-fill: #222222;"); slashPart.setStyle("-fx-text-fill: #888888;"); daysPart.setStyle("-fx-text-fill: #000000;");
                         }
                     } else {
-                        separatorLine.setVisible(true); // 평소엔 경계선 노출
+                        separatorLine.setVisible(true);
                         rowContainer.setStyle("-fx-background-color: transparent; -fx-border-color: transparent; -fx-effect: null;");
-                        mainPart.setStyle("-fx-text-fill: #FF9100;"); // 기본 오렌지색 시간 정보
-                        slashPart.setStyle("-fx-text-fill: #888888;"); // 슬래시 회색
-                        daysPart.setStyle("-fx-text-fill: #00E5FF;");  // 일수(Days): 민트 하늘색
+                        mainPart.setStyle("-fx-text-fill: #FF9100;"); slashPart.setStyle("-fx-text-fill: #888888;"); daysPart.setStyle("-fx-text-fill: #00E5FF;");
                     }
-
                     setStyle("-fx-background-color: transparent !important; -fx-padding: 0px !important;");
                     setGraphic(totalCellLayout);
                 }
@@ -352,23 +400,38 @@ public class HelloApplication extends Application {
             if (newVal != null) openBtn.setDisable(false);
         });
 
-        // 🛠️ [원본 로직 100% 보존] 리스트뷰에서 꺼내오는 값은 순수 이름(String)이므로 맵 매칭이 무조건 성공합니다!
         openBtn.setOnAction(e -> {
             String selectedName = projectListView.getSelectionModel().getSelectedItem();
             if (selectedName != null) {
                 selectionStage.close();
-                ProjectData data = projectStorage.get(selectedName); // 👈 완벽 매칭 성공!
-                openCalendarWindow(ownerStage, isDarkMode, data);    // 👈 캘린더 창 완벽 오픈!
+                ProjectData data = projectStorage.get(selectedName);
+                openCalendarWindow(ownerStage, isDarkMode, data);
             }
         });
 
         Button cancelBtn = new Button("Cancel");
         cancelBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: " + txtColor + "; -fx-cursor: hand;");
         cancelBtn.setOnAction(e -> selectionStage.close());
+
+        Button deleteBtn = new Button("Clear Record");
+        deleteBtn.setStyle("-fx-background-color: #757575; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
+        deleteBtn.setOnAction(e -> {
+            String selectedName = projectListView.getSelectionModel().getSelectedItem();
+            if (selectedName != null) {
+                projectStorage.remove(selectedName);
+                File excelFile = new File(STORAGE_DIR_PATH + File.separator + selectedName + ".xlsx");
+                if (excelFile.exists()) {
+                    excelFile.delete();
+                }
+                projectListView.getItems().remove(selectedName);
+                if (projectListView.getItems().isEmpty()) {
+                    projectListView.setPlaceholder(new Label("No projects found."));
+                }
+            }
+        });
+
         Button locationBtn = new Button("File Location");
         locationBtn.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
-
-        // [파일 탐색기 타깃 버그 해결 원본 유지]
         locationBtn.setOnAction(e -> {
             try {
                 File folder = new File(STORAGE_DIR_PATH);
@@ -376,25 +439,29 @@ public class HelloApplication extends Application {
                     String folderUri = folder.getCanonicalFile().toURI().toString();
                     getHostServices().showDocument(folderUri);
                 }
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+            } catch (Exception ex) { ex.printStackTrace(); }
         });
 
-        HBox footer = new HBox(12, cancelBtn, locationBtn, openBtn);
+        Pane continueLogo = AppLogoUI.createLogo(32, isDarkMode);
+        HBox topBar = new HBox(12, continueLogo, titleLabel);
+        topBar.setAlignment(Pos.CENTER_LEFT);
+        topBar.setPadding(new Insets(15, 0, 5, 15));
+
+        HBox footer = new HBox(12, cancelBtn, deleteBtn, locationBtn, openBtn);
         footer.setAlignment(Pos.CENTER_RIGHT);
         footer.setPadding(new Insets(15));
-        layout.setTop(titleLabel);
+
+        layout.setTop(topBar);
         layout.setCenter(projectListView);
         layout.setBottom(footer);
         BorderPane.setMargin(projectListView, new Insets(0, 15, 0, 15));
-        Scene scene = new Scene(layout, 420, 400);
+
+        Scene scene = new Scene(layout, 450, 400);
         scene.setFill(Color.TRANSPARENT);
         selectionStage.setScene(scene);
         selectionStage.show();
     }
 
-    // 📅 메인 달력 메커니즘 화면
     private void openCalendarWindow(Stage ownerStage, boolean isDarkMode, ProjectData projectData) {
         Stage calStage = new Stage();
         calStage.initStyle(StageStyle.TRANSPARENT);
@@ -406,7 +473,8 @@ public class HelloApplication extends Application {
                 ? "-fx-background-color: #3E3E3F; -fx-control-inner-background: #3E3E3F; -fx-text-fill: white; -fx-prompt-text-fill: white; -fx-mark-color: white; -fx-text-base-color: white;"
                 : "-fx-background-color: #EAEAEA; -fx-control-inner-background: #FFFFFF; -fx-text-fill: black; -fx-prompt-text-fill: black; -fx-mark-color: black; -fx-text-base-color: black;";
         mainLayout.setStyle("-fx-background-color: " + panelBg + "; -fx-background-radius: 15px; -fx-border-radius: 15px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 12, 0, 0, 0);");
-        Label headerTitle = new Label("Working Calendar — [" + projectData.projectName + "]");
+        calStage.setTitle("Work Calc Calendar - " + projectData.projectName);
+        Label headerTitle = new Label("Work Calc Calendar — [" + projectData.projectName + "]");
         headerTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: " + txtColor + ";");
         Button closeBtn = new Button("✕");
         closeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: " + txtColor + "; -fx-font-weight: bold; -fx-cursor: hand;");
@@ -441,7 +509,6 @@ public class HelloApplication extends Application {
         cbToggleMode.setStyle("-fx-text-fill: " + txtColor + "; -fx-font-weight: bold; -fx-cursor: hand;");
         Label lblDataValue = new Label("0 Hours");
         lblDataValue.setStyle("-fx-text-fill: #4CAF50; -fx-font-size: 14px; -fx-font-weight: bold;");
-// 대시보드 통계 합산기
         Runnable calculateDashboardStats = () -> {
             int totalMinutes = 0;
             int totalDays = 0;
@@ -522,7 +589,6 @@ public class HelloApplication extends Application {
         yearChooser.setOnAction(e -> refreshCalendar.run());
         monthChooser.setOnAction(e -> refreshCalendar.run());
         refreshCalendar.run();
-// [스크린샷 버그 차단 완비] 라벨 객체 분리 선언 후 다크모드 대응 색상 스타일 강제 부여
         Label lblYearText = new Label("Year:"); lblYearText.setStyle("-fx-text-fill: " + txtColor + ";");
         Label lblMonthText = new Label("Month:"); lblMonthText.setStyle("-fx-text-fill: " + txtColor + ";");
         HBox selectBar = new HBox(12, lblYearText, yearChooser, lblMonthText, monthChooser);
@@ -611,7 +677,14 @@ public class HelloApplication extends Application {
         deleteBtn.setStyle("-fx-background-color: #757575; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
         deleteBtn.setOnAction(e -> {
             projectData.dateRecords.remove(dateKey);
-            saveDataToDisk(); onSaveSuccess.run(); dialogStage.close();
+            if (projectData.dateRecords.isEmpty()) {
+                File excelFile = new File(STORAGE_DIR_PATH + File.separator + projectData.projectName + ".xlsx");
+                if (excelFile.exists()) excelFile.delete();
+                projectStorage.remove(projectData.projectName);
+            } else {
+                saveDataToDisk();
+            }
+            onSaveSuccess.run(); dialogStage.close();
         });
         Button saveBtn = new Button("Save Record");
         saveBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
@@ -637,6 +710,7 @@ public class HelloApplication extends Application {
         dialogStage.setScene(new Scene(layout, 370, 420));
         dialogStage.show();
     }
+    // 🟢 [버그 해결] 파싱 로직 인덱스 대괄호([]) 실종 현상 전면 복구
     private int parseTimeStringToMinutes(String timeStr) {
         try {
             if (timeStr == null || !timeStr.contains(":") || !timeStr.contains(" ")) return 0;
@@ -661,22 +735,209 @@ public class HelloApplication extends Application {
         } catch (Exception e) { return 0; }
     }
     private void saveDataToDisk() {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(SAVE_FILE_PATH))) {
-            oos.writeObject(projectStorage);
-        } catch (IOException e) { e.printStackTrace(); }
+        for (Map.Entry<String, ProjectData> entry : projectStorage.entrySet()) {
+            String projectName = entry.getKey();
+            ProjectData pData = entry.getValue();
+            File file = new File(STORAGE_DIR_PATH + File.separator + projectName + ".xlsx");
+            try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+                org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet(currentYearMonth.getMonth().name());
+                sheet.setFitToPage(true);
+                org.apache.poi.ss.usermodel.PrintSetup printSetup = sheet.getPrintSetup();
+                printSetup.setFitWidth((short) 1);
+                printSetup.setFitHeight((short) 1);
+                printSetup.setPaperSize(org.apache.poi.ss.usermodel.PrintSetup.A4_PAPERSIZE);
+                org.apache.poi.ss.usermodel.Font mainTitleFont = workbook.createFont();
+                mainTitleFont.setBold(true);
+                mainTitleFont.setFontHeightInPoints((short) 16);
+                org.apache.poi.ss.usermodel.CellStyle titleStyle = workbook.createCellStyle();
+                titleStyle.setFont(mainTitleFont);
+                titleStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.CENTER);
+                org.apache.poi.ss.usermodel.Font headerFont = workbook.createFont();
+                headerFont.setBold(true);
+                headerFont.setColor(org.apache.poi.ss.usermodel.IndexedColors.WHITE.getIndex());
+                org.apache.poi.ss.usermodel.CellStyle headerStyle = workbook.createCellStyle();
+                headerStyle.setFont(headerFont);
+                headerStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.CENTER);
+                headerStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.DARK_TEAL.getIndex());
+                headerStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+                setBorder(headerStyle);
+                org.apache.poi.ss.usermodel.CellStyle cellStyle = workbook.createCellStyle();
+                cellStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.LEFT);
+                cellStyle.setVerticalAlignment(org.apache.poi.ss.usermodel.VerticalAlignment.TOP);
+                cellStyle.setWrapText(true);
+                setBorder(cellStyle);
+                org.apache.poi.ss.usermodel.Font footerFont = workbook.createFont();
+                footerFont.setBold(true);
+                org.apache.poi.ss.usermodel.CellStyle footerStyle = workbook.createCellStyle();
+                footerStyle.setFont(footerFont);
+                footerStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.GREY_25_PERCENT.getIndex());
+                footerStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+                setBorder(footerStyle);
+                org.apache.poi.ss.usermodel.Row titleRow = sheet.createRow(0);
+                titleRow.setHeightInPoints(35);
+                org.apache.poi.ss.usermodel.Cell titleCell = titleRow.createCell(0);
+                titleCell.setCellValue("Work Calc Calendar — [" + projectName + "] (" + currentYearMonth.toString() + ")");
+                titleCell.setCellStyle(titleStyle);
+                sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 6));
+                org.apache.poi.ss.usermodel.Row weekHeaderRow = sheet.createRow(2);
+                weekHeaderRow.setHeightInPoints(25);
+                String[] dayNames = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+                for (int i = 0; i < 7; i++) {
+                    org.apache.poi.ss.usermodel.Cell cell = weekHeaderRow.createCell(i);
+                    cell.setCellValue(dayNames[i]);
+                    cell.setCellStyle(headerStyle);
+                }
+                LocalDate firstOfMonth = currentYearMonth.atDay(1);
+                int startColumn = firstOfMonth.getDayOfWeek().getValue() % 7;
+                int daysInMonth = currentYearMonth.lengthOfMonth();
+                int currentIdxRow = 3;
+                org.apache.poi.ss.usermodel.Row currentExcelRow = sheet.createRow(currentIdxRow);
+                currentExcelRow.setHeightInPoints(50);
+                for (int i = 0; i < startColumn; i++) {
+                    org.apache.poi.ss.usermodel.Cell emptyCell = currentExcelRow.createCell(i);
+                    emptyCell.setCellStyle(cellStyle);
+                }
+                int totalMinutes = 0;
+                int totalDays = 0;
+                int col = startColumn;
+                for (int day = 1; day <= daysInMonth; day++) {
+                    String dKey = currentYearMonth.atDay(day).toString();
+                    org.apache.poi.ss.usermodel.Cell dateCell = currentExcelRow.createCell(col);
+                    String cellContent = " Day " + day + "\n";
+                    if (pData.dateRecords.containsKey(dKey)) {
+                        TimeRecord rec = pData.dateRecords.get(dKey);
+                        if (rec != null) {
+                            totalDays++;
+                            if ("CHECKED".equals(rec.type)) {
+                                totalMinutes += (8 * 60);
+                                cellContent += " [✔ 08:00]";
+                            } else if ("FROM_TO".equals(rec.type)) {
+                                int start = parseTimeStringToMinutes(rec.fromTime);
+                                int end = parseTimeStringToMinutes(rec.toTime);
+                                if (end >= start) totalMinutes += (end - start);
+                                cellContent += " [" + rec.fromTime + "~" + rec.toTime + "]";
+                            } else if ("TOTAL".equals(rec.type)) {
+                                totalMinutes += parseDurationStringToMinutes(rec.totalTime);
+                                cellContent += " [" + rec.totalTime + " Hrs]";
+                            }
+                        }
+                    }
+                    dateCell.setCellValue(cellContent);
+                    dateCell.setCellStyle(cellStyle);
+                    col++;
+                    if (col > 6 && day < daysInMonth) {
+                        col = 0;
+                        currentIdxRow++;
+                        currentExcelRow = sheet.createRow(currentIdxRow);
+                        currentExcelRow.setHeightInPoints(50);
+                    }
+                }
+                while (col <= 6) {
+                    org.apache.poi.ss.usermodel.Cell emptyCell = currentExcelRow.createCell(col++);
+                    emptyCell.setCellStyle(cellStyle);
+                }
+                int statStartRow = currentIdxRow + 2;
+                org.apache.poi.ss.usermodel.Row totalDaysRow = sheet.createRow(statStartRow);
+                totalDaysRow.setHeightInPoints(22);
+                org.apache.poi.ss.usermodel.Cell labelDays = totalDaysRow.createCell(0);
+                labelDays.setCellValue(" Total Logged Days");
+                labelDays.setCellStyle(footerStyle);
+                sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(statStartRow, statStartRow, 0, 2));
+                org.apache.poi.ss.usermodel.Cell valDays = totalDaysRow.createCell(3);
+                valDays.setCellValue(totalDays + " Days completed");
+                valDays.setCellStyle(footerStyle);
+                sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(statStartRow, statStartRow, 3, 6));
+                org.apache.poi.ss.usermodel.Row totalTimeRow = sheet.createRow(statStartRow + 1);
+                totalTimeRow.setHeightInPoints(22);
+                org.apache.poi.ss.usermodel.Cell labelTime = totalTimeRow.createCell(0);
+                labelTime.setCellValue(" Total Logged Working Time");
+                labelTime.setCellStyle(footerStyle);
+                sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(statStartRow + 1, statStartRow + 1, 0, 2));
+                int finalHours = totalMinutes / 60;
+                int finalMins = totalMinutes % 60;
+                org.apache.poi.ss.usermodel.Cell valTime = totalTimeRow.createCell(3);
+                valTime.setCellValue(String.format("%d Hrs %02d Mins accumulated", finalHours, finalMins));
+                valTime.setCellStyle(footerStyle);
+                sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(statStartRow + 1, statStartRow + 1, 3, 6));
+                for (int i = 0; i < 7; i++) {
+                    sheet.setColumnWidth(i, 4800);
+                }
+                try (FileOutputStream fileOut = new FileOutputStream(file)) {
+                    workbook.write(fileOut);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    private void setBorder(org.apache.poi.ss.usermodel.CellStyle style) {
+        style.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+        style.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+        style.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+        style.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+        style.setTopBorderColor(org.apache.poi.ss.usermodel.IndexedColors.GREY_40_PERCENT.getIndex());
+        style.setBottomBorderColor(org.apache.poi.ss.usermodel.IndexedColors.GREY_40_PERCENT.getIndex());
+        style.setLeftBorderColor(org.apache.poi.ss.usermodel.IndexedColors.GREY_40_PERCENT.getIndex());
+        style.setRightBorderColor(org.apache.poi.ss.usermodel.IndexedColors.GREY_40_PERCENT.getIndex());
     }
     @SuppressWarnings("unchecked")
     private void loadDataFromDisk() {
-        File dataFile = new File(SAVE_FILE_PATH);
-        if (!dataFile.exists()) return;
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(dataFile))) {
-            Object readObject = ois.readObject();
-            if (readObject instanceof Map) {
-                projectStorage = (Map<String, ProjectData>) readObject;
+        File dir = new File(STORAGE_DIR_PATH);
+        if (!dir.exists() || dir.listFiles() == null) return;
+        projectStorage.clear();
+        for (File file : dir.listFiles()) {
+            if (file.isFile() && file.getName().endsWith(".xlsx")) {
+                String projectName = file.getName().substring(0, file.getName().lastIndexOf(".xlsx"));
+                ProjectData pData = new ProjectData(projectName);
+                try (FileInputStream fis = new FileInputStream(file);
+                     org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(fis)) {
+                    org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
+                    int rows = sheet.getPhysicalNumberOfRows();
+                    for (int r = 1; r < rows; r++) {
+                        org.apache.poi.ss.usermodel.Row row = sheet.getRow(r);
+                        if (row == null) continue;
+                        org.apache.poi.ss.usermodel.Cell cellDate = row.getCell(0);
+                        org.apache.poi.ss.usermodel.Cell cellType = row.getCell(1);
+                        org.apache.poi.ss.usermodel.Cell cellDetail = row.getCell(2);
+                        if (cellDate != null && cellType != null) {
+                            String dateKey = cellDate.getStringCellValue();
+                            String type = cellType.getStringCellValue();
+                            TimeRecord rec = new TimeRecord();
+                            rec.type = type;
+                            if ("FROM_TO".equals(type) && cellDetail != null) {
+                                String[] timeSplit = cellDetail.getStringCellValue().split(" ~ ");
+                                if (timeSplit.length == 2) { rec.fromTime = timeSplit[0]; rec.toTime = timeSplit[1]; }
+                            } else if ("TOTAL".equals(type) && cellDetail != null) {
+                                rec.totalTime = cellDetail.getStringCellValue().replace(" Hrs", "");
+                            } else if ("CHECKED".equals(type)) { rec.isChecked = true; }
+                            pData.dateRecords.put(dateKey, rec);
+                        }
+                    }
+                    projectStorage.put(projectName, pData);
+                } catch (Exception e) { System.err.println(file.getName() + " 파싱 실패."); }
             }
-        } catch (Exception e) {
-            dataFile.delete();
         }
     }
-    public static void main(String[] args) { launch(); }
+    public static class AppLogoUI {
+        public static Pane createLogo(double size, boolean isDarkMode) {
+            StackPane logoContainer = new StackPane();
+            logoContainer.setPrefSize(size, size);
+            logoContainer.setMaxSize(size, size);
+            javafx.scene.shape.Circle baseCircle = new javafx.scene.shape.Circle(size / 2);
+            baseCircle.setFill(Color.web(isDarkMode ? "#2D2D30" : "#EAEAEA"));
+            javafx.scene.shape.SVGPath calIcon = new javafx.scene.shape.SVGPath();
+            calIcon.setContent("M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z");
+            calIcon.setFill(Color.web("#FF9100"));
+            double scale = (size / 24.0) * 0.55;
+            calIcon.setScaleX(scale);
+            calIcon.setScaleY(scale);
+            javafx.scene.shape.Circle checkedDot = new javafx.scene.shape.Circle(size * 0.12);
+            checkedDot.setFill(Color.web("#00E5FF"));
+            StackPane.setAlignment(checkedDot, Pos.BOTTOM_RIGHT);
+            StackPane.setMargin(checkedDot, new Insets(0, size * 0.15, size * 0.15, 0));
+            logoContainer.getChildren().addAll(baseCircle, calIcon, checkedDot);
+            return logoContainer;
+        }
+    }
+    public static void main(String[] args) { launch(args); }
 }

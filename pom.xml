@@ -12,9 +12,13 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.12.1</junit.version>
+        <!-- ⚙️ JavaFX 21 및 빌드 최적화를 위해 컴파일러 대상을 JDK 21 표준으로 완벽히 동기화합니다. -->
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
     </properties>
 
     <dependencies>
+        <!-- JavaFX 핵심 컨트롤 컴포넌트 -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
@@ -40,6 +44,8 @@
             <artifactId>javafx-media</artifactId>
             <version>21.0.6</version>
         </dependency>
+
+        <!-- UI 확장 UI 테마 툴킷 라이브러리셋 -->
         <dependency>
             <groupId>org.controlsfx</groupId>
             <artifactId>controlsfx</artifactId>
@@ -99,6 +105,17 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
+        <!-- ================================================================= -->
+        <!-- 📊 [신규 추가] 엑셀(.xlsx) 파일 연동 및 내보내기를 위한 Apache POI 엔진 -->
+        <!-- ================================================================= -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.4.0</version>
+        </dependency>
+
+        <!-- 단위 테스트 구동 모듈 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -115,15 +132,18 @@
 
     <build>
         <plugins>
+            <!-- 자바 컴파일러 플러그인 구성 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <source>11</source> <!-- JavaFX 21 가동을 위해 소스 버전을 안전하게 11이상으로 가이드 상향 변경 -->
-                    <target>11</target>
+                    <source>21</source>
+                    <target>21</target>
                 </configuration>
             </plugin>
+
+            <!-- 자바FX 빌드 오케스트레이션 플러그인 구성 -->
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
@@ -133,7 +153,7 @@
                         <!-- Default configuration for running with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <!-- 🛠️ [수정 완료] 메인 클래스 진입 경로 패턴을 순수 표준 규격으로 완벽히 매핑 고정 -->
+                            <!-- 🛠️ 메인 클래스 진입 경로 패턴을 순수 표준 규격으로 완벽히 매핑 고정 -->
                             <mainClass>part.demo1.HelloApplication</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
