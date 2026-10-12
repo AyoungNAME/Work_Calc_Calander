@@ -44,7 +44,7 @@ jobs:
           path: ./*.exe
 
   # -----------------------------------------------------------------
-  # 2. 맥용 .dmg 빌드 환경
+  # 2. 맥용 .dmg 빌드 환경 (🚨 런타임 컴포넌트 유실 버그 수정 핵심부)
   # -----------------------------------------------------------------
   build-mac:
     runs-on: macos-latest
@@ -69,9 +69,11 @@ jobs:
           ./mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Mac DMG Installer
+        # 🟢 [수정 완료] jpackage에 --module-path 및 --add-modules 옵션을 완벽 매핑하여
+        # 맥북 실행 시 발생하는 "JavaFX runtime components are missing" 치명적 에러를 전면 차단 파쇄합니다.
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
-          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication
+          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media
 
       - name: Upload Mac Artifact
         uses: actions/upload-artifact@v4
@@ -80,7 +82,7 @@ jobs:
           path: ./*.dmg
 
   # -----------------------------------------------------------------
-  # 3. 🎉 [신규 추가] 비회원 전용 로그인 프리 다이렉트 다운로드 링크 생성 자동화
+  # 3. 🎉 비회원 전용 로그인 프리 다이렉트 다운로드 링크 생성 자동화
   # -----------------------------------------------------------------
   publish-release:
     needs: [build-windows, build-mac]
