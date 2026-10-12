@@ -163,11 +163,11 @@
                             <noHeaderFiles>true</noHeaderFiles>
 
                             <!-- ================================================================= -->
-                            <!-- 🎯 [아이콘 버그 완전 분쇄] 윈도우 및 맥OS 설치 파일 아이콘 영구 각인 옵션 주입 -->
+                            <!-- 🎯 [루트 경로 동기화] resources 폴더 내부가 아닌 최상단 루트의 실물 아이콘으로 타깃 매핑 고정 -->
                             <!-- ================================================================= -->
                             <options>
                                 <option>--icon</option>
-                                <option>${project.basedir}/src/main/resources/icon.icns</option>
+                                <option>${project.basedir}/icon.icns</option>
                             </options>
                         </configuration>
                     </execution>
