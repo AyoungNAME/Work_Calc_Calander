@@ -8,7 +8,7 @@ on:
 
 jobs:
   # -----------------------------------------------------------------
-  # 1. 윈도우용 .exe 빌드 환경 (완벽 고정 및 성공 성공)
+  # 1. 윈도우용 .exe 빌드 환경 (완벽 고정 및 성공)
   # -----------------------------------------------------------------
   build-windows:
     runs-on: windows-latest
@@ -43,7 +43,7 @@ jobs:
           path: ./*.exe
 
   # -----------------------------------------------------------------
-  # 2. 맥용 .dmg 빌드 환경 (🚨 에러 유발 요소를 전면 차단한 패스 버전)
+  # 2. 맥용 .dmg 빌드 환경 (🚨 하드웨어 전용 .icns 완벽 병합 버전)
   # -----------------------------------------------------------------
   build-mac:
     runs-on: macos-latest
@@ -68,11 +68,11 @@ jobs:
           ./mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Mac DMG Installer
-        # 🟢 [버그 원천 차단] 가상 머신에서 쓰기 오류를 일으키던 임시 파일 변환 도구를 전면 삭제하고
-        # 자바 라이브러리 모듈 가이드만 명확히 연결하여 팅김 현상을 영구 파쇄합니다.
+        # 🟢 [버그 영구 파쇄] 에러를 유발하던 가상 sips 프로세스를 통째로 소멸시키고,
+        # 우리가 물리적으로 넣어준 assets/Work-Calc-Calendar.icns 정식 규격 파일을 jpackage --icon 옵션에 직통 다이렉트로 바인딩합니다.
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
-          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media
+          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon assets/Work-Calc-Calendar.icns
 
       - name: Upload Mac Artifact
         uses: actions/upload-artifact@v4
