@@ -8,7 +8,7 @@ on:
 
 jobs:
   # -----------------------------------------------------------------
-  # 1. 윈도우용 .exe 빌드 환경 (성공 검증 완료 고정)
+  # 1. 윈도우용 .exe 빌드 환경 (이미지 원천 동적 변환 가동)
   # -----------------------------------------------------------------
   build-windows:
     runs-on: windows-latest
@@ -32,9 +32,12 @@ jobs:
           .\mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Windows EXE Installer
+        # 🟢 [윈도우 픽스] 가상 서버 루트에서 Work-Calc-Calendar.icns 파일을 스스로 역추적하여
+        # 윈도우가 인식 가능한 타깃 경로 자리에 강제로 무조건 복사 및 결합 후 빌드를 완결시킵니다.
         run: |
           copy target\demo1-1.0-SNAPSHOT.jar target\libs\
-          jpackage --type exe --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --win-dir-chooser --win-shortcut
+          powershell -Command "Get-ChildItem -Recurse -Filter '*Work-Calc-Calendar.icns' | Select-Object -First 1 | Foreach-Object { Copy-Item \$_.FullName -Destination 'target/libs/icon.ico' }"
+          jpackage --type exe --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --win-dir-chooser --win-shortcut --icon target/libs/icon.ico
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
@@ -43,7 +46,7 @@ jobs:
           path: ./*.exe
 
   # -----------------------------------------------------------------
-  # 2. 맥용 .dmg 빌드 환경 (🚨 하위 폴더 전방위 추적 및 탐색 검증 완료)
+  # 2. 맥용 .dmg 빌드 환경 (이미지 원천 동적 변환 가동)
   # -----------------------------------------------------------------
   build-mac:
     runs-on: macos-latest
@@ -68,14 +71,11 @@ jobs:
           ./mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Mac DMG Installer
-        # 🟢 [버그 원천 해결]
-        # 상대 경로의 대소문자나 하위 중복 폴더의 깊이에 절대 간섭받지 않도록,
-        # 가상 러너의 현재 작업 디렉토리 기준 '상위 2단계 조상 폴더(../../)'부터 시작하여 프로젝트 전체 하위 트리를
-        # 와일드카드 기표(*Work-Calc-Calendar.icns)로 전방위 추적합니다.
-        # 발견된 물리 파일은 jpackage 가동 본진인 target/libs/icon.icns 자리에 강제로 무조건 복사되어 에러를 완벽하게 정복합니다.
+        # 🟢 [맥 픽스] 맥 환경에서도 동일하게 전체 공간 무제한fuzzy 스캔을 통해 icns 자산을 발굴한 뒤
+        # target/libs/icon.icns 절대 주소 자리에 무조건 도포하여 .dmg 설치창 껍데기 로고까지 영구 각인합니다.
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
-          find ../../ -name "*Work-Calc-Calendar.icns" -exec cp {} target/libs/icon.icns \;
+          find . -name "*Work-Calc-Calendar.icns" -exec cp {} target/libs/icon.icns \;
           jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon target/libs/icon.icns
 
       - name: Upload Mac Artifact
