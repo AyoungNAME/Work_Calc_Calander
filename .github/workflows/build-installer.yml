@@ -8,7 +8,7 @@ on:
 
 jobs:
   # -----------------------------------------------------------------
-  # 1. 윈도우용 .exe 빌드 환경 (보내주신 스크린샷 로고 완벽 재현 코딩)
+  # 1. 윈도우용 .exe 빌드 환경 (main 매개변수 문법 오타 완벽 해결)
   # -----------------------------------------------------------------
   build-windows:
     runs-on: windows-latest
@@ -32,7 +32,7 @@ jobs:
           .\mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Generate Custom Windows Icon via Code
-        # 🟢 보내주신 스크린샷의 '왼쪽 위 민트색 점' 레이아웃 가이드를 256x256 해상도로 정밀 수치 보정하여 유효한 .ico 파일로 임시 출력합니다.
+        # 🟢 [버그 해결] 'String[] args' 표준 배열 문법을 정확하게 명시하여 진입점 누락 에러를 완전히 파쇄합니다.
         run: |
           copy target\demo1-1.0-SNAPSHOT.jar target\libs\
           mkdir -Force assets
@@ -42,7 +42,7 @@ jobs:
           import java.io.File;
           import javax.imageio.ImageIO;
           public class MakeIcon {
-              public static void main(String args) throws Exception {
+              public static void main(String[] args) throws Exception {
                   BufferedImage img = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
                   Graphics2D g = img.createGraphics();
                   g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -53,7 +53,7 @@ jobs:
           
                   // 2. 중앙 오렌지 시그니처 캘린더 본체 렌더링
                   g.setColor(new Color(0xFF, 0x91, 0x00));
-                  g.fillRoundRect(55, 65, 146, 130, 20, 20); // 외곽 라운드 보정
+                  g.fillRoundRect(55, 65, 146, 130, 20, 20);
           
                   // 캘린더 상단 고정 링 데코레이션 2개 홈 파기
                   g.fillRect(80, 50, 20, 25);
@@ -63,7 +63,7 @@ jobs:
                   g.setColor(new Color(0x2D, 0x2D, 0x30));
                   g.fillRect(55, 95, 146, 15);
           
-                  // 3. [보내주신 스크린샷 매핑] 왼쪽 상단(Top-Left) 민트색 포인트 서클 배치
+                  // 3. 왼쪽 상단(Top-Left) 민트색 포인트 서클 배치
                   g.setColor(new Color(0x00, 0xE5, 0xFF));
                   g.fillOval(30, 35, 55, 55);
           
@@ -83,7 +83,7 @@ jobs:
           path: ./*.exe
 
   # -----------------------------------------------------------------
-  # 2. 맥용 .dmg 빌드 환경 (보내주신 스크린샷 로고 완벽 재현 코딩)
+  # 2. 맥용 .dmg 빌드 환경 (main 매개변수 문법 오타 완벽 해결)
   # -----------------------------------------------------------------
   build-mac:
     runs-on: macos-latest
@@ -108,7 +108,7 @@ jobs:
           ./mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Generate Custom Mac Icon via Code
-        # 🟢 맥 가상 머신 환경에서도 동일한 좌표 스펙으로 주황색/민트색 벡터 아이콘을 빌드 타임에 실시간 추출 결합합니다.
+        # 🟢 [버그 해결] 맥 빌드 직전의 스크립트 메인 선언부도 동일하게 'String[] args' 가이드 규격으로 전면 갱신 보정했습니다.
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
           mkdir -p assets
@@ -118,7 +118,7 @@ jobs:
           import java.io.File;
           import javax.imageio.ImageIO;
           public class MakeIcon {
-              public static void main(String args) throws Exception {
+              public static void main(String[] args) throws Exception {
                   BufferedImage img = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
                   Graphics2D g = img.createGraphics();
                   g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
