@@ -32,7 +32,6 @@ jobs:
           .\mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Windows EXE Installer
-        # 🟢 [수정 완료] --icon 설정을 통해 윈도우 바탕화면 및 작업표시줄에 오리지널 주황색 로고를 박아버립니다.
         run: |
           copy target\demo1-1.0-SNAPSHOT.jar target\libs\
           jpackage --type exe --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --win-dir-chooser --win-shortcut --icon assets/Work-Calc-Calendar.ico
@@ -69,7 +68,6 @@ jobs:
           ./mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Mac DMG Installer
-        # 🟢 [수정 완료] --icon 설정을 통해 .dmg 설치 화면 및 Mac 시스템 런치패드/Dock 영역에 공식 주황색 아이콘을 영구 각인합니다.
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
           jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon assets/Work-Calc-Calendar.icns
@@ -106,56 +104,55 @@ jobs:
         with:
           files: ./release-artifacts/*
           name: Official Release — Work Calc Calendar \${{ github.ref_name }}
+          draft: false
+          prerelease: false
           body: |
             ## 📊 Work Calc Calendar 공식 배포판 (Official Release)
 
-  **Work Calc Calendar**는 일일 출퇴근 기록, 근무 시간 자동 합산 통계, 그리고 인쇄에 최적화된 달력 형태의 엑셀 리포트 추출 기능을 제공하는 단독 실행형 데스크톱 프로그램입니다.
-  *Work Calc Calendar is a standalone desktop application designed to streamline daily work logs, automate total working hour calculations, and generate print-ready Excel calendar reports instantly.*
+            **Work Calc Calendar**는 일일 출퇴근 기록, 근무 시간 자동 합산 통계, 그리고 인쇄에 최적화된 달력 형태의 엑셀 리포트 추출 기능을 제공하는 단독 실행형 데스크톱 프로그램입니다.
+            *Work Calc Calendar is a standalone desktop application designed to streamline daily work logs, automate total working hour calculations, and generate print-ready Excel calendar reports instantly.*
 
----
+            ---
 
-### ✨ 주요 기능 (Key Features)
+            ### ✨ 주요 기능 (Key Features)
 
-  * **간편한 시간 기록 (Instant Attendance Logger)**
-  클릭 한 번으로 '기본 8시간' 출근을 등록하거나, AM/PM 선택기를 통해 15분 단위의 세부 출퇴근 시간 및 직접 누적 시간을 자유롭게 지정할 수 있습니다.
-  *Clock in with a single click using pre-set 8-hour logs, or input precision 15-minute custom shifts (AM/PM picker) and total manual duration configurations.*
-  
-  * **실시간 대시보드 통계 (Smart Dashboard Analytics)**
-  달력 화면 하단에서 이번 달에 기록된 총 근무 일수와 정확한 누적 시간(시간/분)을 실시간으로 계산해 보여줍니다.
-  *Auto-aggregates and displays total logged days alongside combined exact hours/minutes directly on the core calendar pane.*
-  
-  * **엑셀 달력 1페이지 인쇄 최적화 (1-Page Print Optimization)**
-  저장 시 프로그램 내부의 달력 격자판 레이아웃이 엑셀(.xlsx) 파일 안에 그대로 재현됩니다. 인쇄 시 여백이 깨지지 않고 무조건 A4 용지 1장 안에 예쁘게 핏(Fit)되어 출력되도록 인쇄 서식이 자동 내장되어 있습니다.
-  *Export fully formatted, color-coded grid calendars directly into .xlsx (Excel) sheets structured to dynamically upscale/downscale into exactly one A4 page for flawless hardcopy printing.*
-  
-  * **순수 외부 독립 앱 가동 (No Java Required)**
-  프로그램 내부에 초소형 자바 엔진(JDK 21 런타임)이 통째로 패키징되어 있으므로, 컴퓨터에 자바가 깔려있지 않은 일반 사용자도 다운로드 후 더블클릭만으로 즉시 일반 앱처럼 사용할 수 있습니다.
-  *Shipped as pre-packaged .exe / .dmg files embedded with a micro-runtime engine—download and use instantly without any external software dependencies.*
+            * **간편한 시간 기록 (Instant Attendance Logger)**
+              클릭 한 번으로 '기본 8시간' 출근을 등록하거나, AM/PM 선택기를 통해 15분 단위의 세부 출퇴근 시간 및 직접 누적 시간을 자유롭게 지정할 수 있습니다.
+              *Clock in with a single click using pre-set 8-hour logs, or input precision 15-minute custom shifts (AM/PM picker) and total manual duration configurations.*
 
----
+            * **실시간 대시보드 통계 (Smart Dashboard Analytics)**
+              달력 화면 하단에서 이번 달에 기록된 총 근무 일수와 정확한 누적 시간(시간/분)을 실시간으로 계산해 보여줍니다.
+              *Auto-aggregates and displays total logged days alongside combined exact hours/minutes directly on the core calendar pane.*
 
-### 📥 로그인 없이 즉시 다운로드 (Unlocked Direct Download Links)
+            * **엑셀 달력 1페이지 인쇄 최적화 (1-Page Print Optimization)**
+              저장 시 프로그램 내부의 달력 격자판 레이아웃이 엑셀(.xlsx) 파일 안에 그대로 재현됩니다. 인쇄 시 여백이 깨지지 않고 무조건 A4 용지 1장 안에 예쁘게 핏(Fit)되어 출력되도록 인쇄 서식이 자동 내장되어 있습니다.
+              *Export fully formatted, color-coded grid calendars directly into .xlsx (Excel) sheets structured to dynamically upscale/downscale into exactly one A4 page for flawless hardcopy printing.*
 
-  본 페이지 최하단의 **"Assets"** 구역으로 스크롤을 내리시면 로그인 없이 바로 원클릭 다운로드가 가능합니다.
-  *Scroll down to the "Assets" section below and click on your respective system package (No GitHub account or login required):*
-  
-  * **윈도우 사용자 (Windows Users):** `Work-Calc-Calendar.exe` 클릭 후 실행 설치 (*Click to run the direct setup launcher.*)
-  * **맥(Mac) 사용자 (Mac Users):** `Work-Calc-Calendar.dmg` 클릭 후 응용 프로그램 폴더로 드래그하여 설치 (*Click and drag the application into your native Applications directory.*)
+            * **순수 외부 독립 앱 가동 (No Java Required)**
+              프로그램 내부에 초소형 자바 엔진(JDK 21 런타임)이 통째로 패키징되어 있으므로, 컴퓨터에 자바가 깔려있지 않은 일반 사용자도 다운로드 후 더블클릭만으로 즉시 일반 앱처럼 사용할 수 있습니다.
+              *Shipped as pre-packaged .exe / .dmg files embedded with a micro-runtime engine—download and use instantly without any external software dependencies.*
 
----
+            ---
 
-### 🔒 최초 실행 시 보안 차단 해제 안내 (First-Time Startup)
+            ### 📥 로그인 없이 즉시 다운로드 (Unlocked Direct Download Links)
 
-  상용 기업의 유료 인증서 서명을 거치지 않은 순수 개인 개발 배포 파일이므로, 각 운영체제의 시스템 보호 화면이 가동될 수 있습니다. 안전한 프로그램이니 아래의 5초 우회 절차를 적용해 주세요.
-  *Since this software is safely compiled directly from private source distributions without commercial corporate certificate signatures, your host system safety screen may trigger a standard developer check flag. Please apply these quick 5-second bypass steps:*
-  
-  * 💻 **Windows SmartScreen (파란 창):**
-  경고 창 본문의 **[추가 정보]** 글자를 클릭한 뒤, 새롭게 나타나는 우측 하단의 **[실행]** 버튼을 누르면 정상 설치됩니다.
-  *Click "More Info" (추가 정보) on the blue system prompt layout -> Click the hidden "Run Anyway" (실행) action tab to unpack securely.*
-  
-  * 🍏 **macOS Developer Check (확인되지 않은 개발자):**
-  앱을 응용 프로그램 폴더로 복사한 후, 맥북의 **[시스템 설정] ➡️ [개인정보 보호 및 보안]** 메뉴로 이동하여 스크롤을 내린 후 **[확인 없이 열기] (Open Anyway)**를 클릭하고 인증해 주시면 이후부터 정상 가동됩니다.
-  *Navigate to System Settings (시스템 설정) ➡️ Privacy & Security (개인정보 보호 및 보안) ➡️ Scroll to the bottom and click "Open Anyway" (확인 없이 열기) to register permissions instantly.*
+            본 페이지 최하단의 **"Assets"** 구역으로 스크롤을 내리시면 로그인 없이 바로 원클릭 다운로드가 가능합니다.
+            *Scroll down to the "Assets" section below and click on your respective system package (No GitHub account or login required):*
 
-draft: false
-          prerelease: false
+            * **윈도우 사용자 (Windows Users):** `Work-Calc-Calendar.exe` 클릭 후 실행 설치 (*Click to run the direct setup launcher.*)
+            * **맥(Mac) 사용자 (Mac Users):** `Work-Calc-Calendar.dmg` 클릭 후 응용 프로그램 폴더로 드래그하여 설치 (*Click and drag the application into your native Applications directory.*)
+
+            ---
+
+            ### 🔒 최초 실행 시 보안 차단 해제 안내 (First-Time Startup)
+
+            상용 기업의 유료 인증서 서명을 거치지 않은 순수 개인 개발 배포 파일이므로, 각 운영체제의 시스템 보호 화면이 가동될 수 있습니다. 안전한 프로그램이니 아래의 5초 우회 절차를 적용해 주세요.
+            *Since this software is safely compiled directly from private source distributions without commercial corporate certificate signatures, your host system safety screen may trigger a standard developer check flag. Please apply these quick 5-second bypass steps:*
+
+            * 💻 **Windows SmartScreen (파란 창):**
+              경고 창 본문의 **[추가 정보]** 글자를 클릭한 뒤, 새롭게 나타나는 우측 하단의 **[실행]** 버튼을 누르면 정상 설치됩니다.
+              *Click "More Info" (추가 정보) on the blue system prompt layout -> Click the hidden "Run Anyway" (실행) action tab to unpack securely.*
+
+            * 🍏 **macOS Developer Check (확인되지 않은 개발자):**
+              앱을 응용 프로그램 폴더로 복사한 후, 맥북의 **[시스템 설정] ➡️ [개인정보 보호 및 보안]** 메뉴로 이동하여 스크롤을 내린 후 **[확인 없이 열기] (Open Anyway)**를 클릭하고 인증해 주시면 이후부터 정상 가동됩니다.
+              *Navigate to System Settings (시스템 설정) ➡️ Privacy & Security (개인정보 보호 및 보안) ➡️ Scroll to the bottom and click "Open Anyway" (확인 없이 열기) to register permissions instantly.*
