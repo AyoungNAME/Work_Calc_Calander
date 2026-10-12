@@ -8,7 +8,7 @@ on:
 
 jobs:
   # -----------------------------------------------------------------
-  # 1. 윈도우용 .exe 빌드 환경 (인라인 오토 스캔 완비)
+  # 1. 윈도우용 .exe 빌드 환경 (자바 코드로 아이콘 자체 생성)
   # -----------------------------------------------------------------
   build-windows:
     runs-on: windows-latest
@@ -31,13 +31,45 @@ jobs:
         run: |
           .\mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
+      - name: Generate Temporary Windows Icon via Code
+        # 🟢 하드디스크에 아이콘 파일이 없으므로, jpackage 실행 직전에 임시 assets 폴더를 만들고
+        # 자바 임시 스크립트를 통해 우리가 짠 그래픽 레이아웃 그대로 icon.ico 파일을 자동 생성해냅니다!
+        shell: powershell
+        run: |
+          mkdir -Force assets
+          @'
+          import java.awt.*;
+          import java.awt.image.BufferedImage;
+          import java.io.File;
+          import javax.imageio.ImageIO;
+          public class MakeIcon {
+              public static void main(String[] args) throws Exception {
+                  BufferedImage img = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
+                  Graphics2D g = img.createGraphics();
+                  g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                  // 동동 서클 배경
+                  g.setColor(new Color(0x2D, 0x2D, 0x30));
+                  g.fillOval(0, 0, 256, 256);
+                  // 주황색 캘린더 본체
+                  g.setColor(new Color(0xFF, 0x91, 0x00));
+                  g.fillRect(50, 60, 156, 140);
+                  g.setColor(new Color(0x2D, 0x2D, 0x30));
+                  g.fillRect(50, 90, 156, 20);
+                  // 하늘색 미니 점 인디케이터
+                  g.setColor(new Color(0x00, 0xE5, 0xFF));
+                  g.fillOval(140, 140, 45, 45);
+                  g.dispose();
+                  ImageIO.write(img, "png", new File("assets/icon.png"));
+              }
+          }
+          '@ | Out-File -Encoding utf8 MakeIcon.java
+          java MakeIcon.java
+          move assets/icon.png assets/Work-Calc-Calendar.ico
+
       - name: Build Standalone Windows EXE Installer
-        # 🟢 [정밀 매핑] target\libs\ 폴더로 메인 JAR를 복사한 뒤,
-        # 상위 디렉토리(..) 구조 전체를 역으로 뒤져서 .ico 파일을 무조건 찾아내어 target\libs\icon.ico로 강제 복사해 결합합니다.
         run: |
           copy target\demo1-1.0-SNAPSHOT.jar target\libs\
-          powershell -Command "Get-ChildItem -Path ..\.. -Recurse -Filter '*Work-Calc-Calendar.ico' | Select-Object -First 1 | Foreach-Object { Copy-Item \$_.FullName -Destination 'target\libs\icon.ico' }"
-          jpackage --type exe --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --win-dir-chooser --win-shortcut --icon target\libs\icon.ico
+          jpackage --type exe --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --win-dir-chooser --win-shortcut --icon assets/Work-Calc-Calendar.ico
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
@@ -46,7 +78,7 @@ jobs:
           path: ./*.exe
 
   # -----------------------------------------------------------------
-  # 2. 맥용 .dmg 빌드 환경 (인라인 오토 스캔 완비)
+  # 2. 맥용 .dmg 빌드 환경 (자바 코드로 아이콘 자체 생성)
   # -----------------------------------------------------------------
   build-mac:
     runs-on: macos-latest
@@ -70,13 +102,41 @@ jobs:
         run: |
           ./mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
+      - name: Generate Temporary Mac Icon via Code
+        # 🟢 맥 환경에서도 동일하게 jpackage 봉인 직전에 주황색 원형 로고를 빌드 타임에 실시간으로 추출하여
+        # 맥북 규격의 .icns 사양으로 자동 가공해 줍니다!
+        run: |
+          mkdir -p assets
+          cat << 'EOF' > MakeIcon.java
+          import java.awt.*;
+          import java.awt.image.BufferedImage;
+          import java.io.File;
+          import javax.imageio.ImageIO;
+          public class MakeIcon {
+              public static void main(String[] args) throws Exception {
+                  BufferedImage img = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
+                  Graphics2D g = img.createGraphics();
+                  g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                  g.setColor(new Color(0x2D, 0x2D, 0x30));
+                  g.fillOval(0, 0, 256, 256);
+                  g.setColor(new Color(0xFF, 0x91, 0x00));
+                  g.fillRect(50, 60, 156, 140);
+                  g.setColor(new Color(0x2D, 0x2D, 0x30));
+                  g.fillRect(50, 90, 156, 20);
+                  g.setColor(new Color(0x00, 0xE5, 0xFF));
+                  g.fillOval(140, 140, 45, 45);
+                  g.dispose();
+                  ImageIO.write(img, "png", new File("assets/icon.png"));
+              }
+          }
+          EOF
+          java MakeIcon.java
+          mv assets/icon.png assets/Work-Calc-Calendar.icns
+
       - name: Build Standalone Mac DMG Installer
-        # 🟢 [정밀 매핑] 맥 환경에서도 동일하게 상위 경로(../../) 전체를 뒤져서 .icns 아이콘 자산을 추적한 후
-        # target/libs/icon.icns에 정확하게 안착시켜 런타임 누수를 소멸시킵니다.
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
-          find ../.. -name "*Work-Calc-Calendar.icns" -exec cp {} target/libs/icon.icns \;
-          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon target/libs/icon.icns
+          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon assets/Work-Calc-Calendar.icns
 
       - name: Upload Mac Artifact
         uses: actions/upload-artifact@v4
@@ -161,4 +221,3 @@ jobs:
 
             * 🍏 **macOS Developer Check (확인되지 않은 개발자):**
               앱을 응용 프로그램 폴더로 복사한 후, 맥북의 **[시스템 설정] ➡️ [개인정보 보호 및 보안]** 메뉴로 이동하여 스크롤을 내린 후 **[확인 없이 열기] (Open Anyway)**를 클릭하고 인증해 주시면 이후부터 정상 가동됩니다.
-              *Navigate to System Settings (시스템 설정) ➡️ Privacy & Security (개인정보 보호 및 보안) ➡️ Scroll to the bottom and click "Open Anyway" (확인 없이 열기) to register permissions instantly.*
