@@ -43,7 +43,7 @@ jobs:
           path: ./*.exe
 
   # -----------------------------------------------------------------
-  # 2. 맥용 .dmg 빌드 환경 (🚨 오토 스캔 깊이 무제한 하이브리드 버전)
+  # 2. 맥용 .dmg 빌드 환경 (🚨 절대 경로 동적 강제 맵핑 버전)
   # -----------------------------------------------------------------
   build-mac:
     runs-on: macos-latest
@@ -68,13 +68,13 @@ jobs:
           ./mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Mac DMG Installer
-        # 🟢 [경로 버그 파쇄 핵심]
-        # find 명령어를 통해 가상 리포지토리 전체를 뒤져서 'Work-Calc-Calendar.icns' 파일을 무조건 발굴해낸 뒤
-        # jpackage가 바로 낚아챌 수 있도록 target/libs/icon.icns 자리에 강제로 강하(복사)시켜 바인딩합니다.
+        # 🟢 [버그 해결 핵심]
+        # 가상 러너의 기본 루트 전체 주소(\$GITHUB_WORKSPACE)에서 하위 경로 깊이에 구애받지 않고
+        # *.icns 파일을 샅샅이 뒤져 target/libs/icon.icns 자리에 강제로 절대 주소 복사를 꽂아 넣습니다.
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
-          find . -name "Work-Calc-Calendar.icns" -exec cp {} target/libs/icon.icns \;
-          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon target/libs/icon.icns
+          find \$GITHUB_WORKSPACE -name "*Work-Calc-Calendar.icns" -exec cp {} \$GITHUB_WORKSPACE/target/libs/icon.icns \;
+          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon \$GITHUB_WORKSPACE/target/libs/icon.icns
 
       - name: Upload Mac Artifact
         uses: actions/upload-artifact@v4
@@ -159,4 +159,4 @@ jobs:
 
             * 🍏 **macOS Developer Check (확인되지 않은 개발자):**
               앱을 응용 프로그램 폴더로 복사한 후, 맥북의 **[시스템 설정] ➡️ [개인정보 보호 및 보안]** 메뉴로 이동하여 스크롤을 내린 후 **[확인 없이 열기] (Open Anyway)**를 클릭하고 인증해 주시면 이후부터 정상 가동됩니다.
-              *Navigate to System Settings (시스템 설정) ➡️ Privacy & Security (개기인정보 보호 및 보안) ➡️ Scroll to the bottom and click "Open Anyway" (확인 없이 열기) to register permissions instantly.*
+              *Navigate to System Settings (시스템 설정) ➡️ Privacy & Security (개인정보 보호 및 보안) ➡️ Scroll to the bottom and click "Open Anyway" (확인 없이 열기) to register permissions instantly.*
