@@ -8,7 +8,7 @@ on:
 
 jobs:
   # -----------------------------------------------------------------
-  # 1. 윈도우용 .exe 빌드 환경 (완벽 고정 및 성공)
+  # 1. 윈도우용 .exe 빌드 환경 (성공 검증 완료 고정)
   # -----------------------------------------------------------------
   build-windows:
     runs-on: windows-latest
@@ -43,7 +43,7 @@ jobs:
           path: ./*.exe
 
   # -----------------------------------------------------------------
-  # 2. 맥용 .dmg 빌드 환경 (🚨 하드웨어 전용 .icns 완벽 병합 버전)
+  # 2. 맥용 .dmg 빌드 환경 (🚨 오토 스캔 깊이 무제한 하이브리드 버전)
   # -----------------------------------------------------------------
   build-mac:
     runs-on: macos-latest
@@ -68,11 +68,13 @@ jobs:
           ./mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Mac DMG Installer
-        # 🟢 [버그 영구 파쇄] 에러를 유발하던 가상 sips 프로세스를 통째로 소멸시키고,
-        # 우리가 물리적으로 넣어준 assets/Work-Calc-Calendar.icns 정식 규격 파일을 jpackage --icon 옵션에 직통 다이렉트로 바인딩합니다.
+        # 🟢 [경로 버그 파쇄 핵심]
+        # find 명령어를 통해 가상 리포지토리 전체를 뒤져서 'Work-Calc-Calendar.icns' 파일을 무조건 발굴해낸 뒤
+        # jpackage가 바로 낚아챌 수 있도록 target/libs/icon.icns 자리에 강제로 강하(복사)시켜 바인딩합니다.
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
-          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon assets/Work-Calc-Calendar.icns
+          find . -name "Work-Calc-Calendar.icns" -exec cp {} target/libs/icon.icns \;
+          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon target/libs/icon.icns
 
       - name: Upload Mac Artifact
         uses: actions/upload-artifact@v4
@@ -157,4 +159,4 @@ jobs:
 
             * 🍏 **macOS Developer Check (확인되지 않은 개발자):**
               앱을 응용 프로그램 폴더로 복사한 후, 맥북의 **[시스템 설정] ➡️ [개인정보 보호 및 보안]** 메뉴로 이동하여 스크롤을 내린 후 **[확인 없이 열기] (Open Anyway)**를 클릭하고 인증해 주시면 이후부터 정상 가동됩니다.
-              *Navigate to System Settings (시스템 설정) ➡️ Privacy & Security (개인정보 보호 및 보안) ➡️ Scroll to the bottom and click "Open Anyway" (확인 없이 열기) to register permissions instantly.*
+              *Navigate to System Settings (시스템 설정) ➡️ Privacy & Security (개기인정보 보호 및 보안) ➡️ Scroll to the bottom and click "Open Anyway" (확인 없이 열기) to register permissions instantly.*
