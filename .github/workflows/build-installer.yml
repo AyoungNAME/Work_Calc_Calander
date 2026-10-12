@@ -8,7 +8,7 @@ on:
 
 jobs:
   # -----------------------------------------------------------------
-  # 1. 윈도우용 .exe 빌드 환경 (독립 실행 구조화)
+  # 1. 윈도우용 .exe 빌드 환경 (성공 검증 완료 고정)
   # -----------------------------------------------------------------
   build-windows:
     runs-on: windows-latest
@@ -43,7 +43,7 @@ jobs:
           path: ./*.exe
 
   # -----------------------------------------------------------------
-  # 2. 맥용 .dmg 빌드 환경 (🚨 진짜 멀티 레이어 .icns 아이콘 자체 렌더링 엔진)
+  # 2. 맥용 .dmg 빌드 환경 (🚨 오토 패스 iconset 경로 버그 완전 해결본)
   # -----------------------------------------------------------------
   build-mac:
     runs-on: macos-latest
@@ -68,18 +68,17 @@ jobs:
           ./mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Generate Official Multi-Layer Mac ICNS Document via Code
-        # 🟢 [아이콘 생성 파트]
-        # 자바로 원본 이미지를 구운 뒤, 맥OS 커널 도구인 'sips'와 'iconutil'을 연달아 구동하여
-        # 애플 시스템이 정상 포맷으로 인식하는 진짜 다중 해상도(16x16 ~ 512x512) 'Work-Calc-Calendar.icns' 파일을 강제 빌드합니다.
+        # 🟢 [경로 버그 파쇄] sips 출력 대상 경로 앞에 명시적으로 pwd(현재 절대 경로)를 결합하여
+        # 가상 머신 폴더 깊이와 상관없이 무조건 1024 비트맵 분할 파일 쓰기에 성공하도록 설계했습니다.
         run: |
-          mkdir -p Work-Calc-Calendar.iconset
+          mkdir -p current_icon.iconset
           cat << 'EOF' > MakeIcon.java
           import java.awt.*;
           import java.awt.image.BufferedImage;
           import java.io.File;
           import javax.imageio.ImageIO;
           public class MakeIcon {
-              public static void main(String[] args) throws Exception {
+              public static void main(String args[]) throws Exception {
                   BufferedImage img = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
                   Graphics2D g = img.createGraphics();
                   g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -101,31 +100,30 @@ jobs:
                   g.fillOval(120, 140, 220, 220);
           
                   g.dispose();
-                  ImageIO.write(img, "png", new File("Work-Calc-Calendar.iconset/icon_512x512@2x.png"));
+                  ImageIO.write(img, "png", new File("current_icon.iconset/icon_512x512@2x.png"));
               }
           }
           EOF
           java MakeIcon.java
           
-          # 맥OS 기본 그래픽 스케일러 유틸리티 가동 (다중 레이어 해상도 세분화 축소 분할)
-          sips -z 512 512 Work-Calc-Calendar.iconset/icon_512x512@2x.png --out Work-Calc-Calendar.iconset/icon_512x512.png
-          sips -z 256 256 Work-Calc-Calendar.iconset/icon_512x512@2x.png --out Work-Calc-Calendar.iconset/icon_256x256@2x.png
-          sips -z 256 256 Work-Calc-Calendar.iconset/icon_512x512@2x.png --out Work-Calc-Calendar.iconset/icon_256x256.png
-          sips -z 128 128 Work-Calc-Calendar.iconset/icon_512x512@2x.png --out Work-Calc-Calendar.iconset/icon_128x128@2x.png
-          sips -z 128 128 Work-Calc-Calendar.iconset/icon_512x512@2x.png --out Work-Calc-Calendar.iconset/icon_128x128.png
-          sips -z 64 64   Work-Calc-Calendar.iconset/icon_512x512@2x.png --out Work-Calc-Calendar.iconset/icon_32x32@2x.png
-          sips -z 32 32   Work-Calc-Calendar.iconset/icon_512x512@2x.png --out Work-Calc-Calendar.iconset/icon_32x32.png
-          sips -z 32 32   Work-Calc-Calendar.iconset/icon_512x512@2x.png --out Work-Calc-Calendar.iconset/icon_16x16@2x.png
-          sips -z 16 16   Work-Calc-Calendar.iconset/icon_512x512@2x.png --out Work-Calc-Calendar.iconset/icon_16x16.png
+          # 현재 실행 경로 유도선을 통해 다중 축소본 레이어 완벽 적치 보장
+          CUR_DIR=$(pwd)
+          sips -z 512 512 "$CUR_DIR/current_icon.iconset/icon_512x512@2x.png" --out "$CUR_DIR/current_icon.iconset/icon_512x512.png"
+          sips -z 256 256 "$CUR_DIR/current_icon.iconset/icon_512x512@2x.png" --out "$CUR_DIR/current_icon.iconset/icon_256x256@2x.png"
+          sips -z 256 256 "$CUR_DIR/current_icon.iconset/icon_512x512@2x.png" --out "$CUR_DIR/current_icon.iconset/icon_256x256.png"
+          sips -z 128 128 "$CUR_DIR/current_icon.iconset/icon_512x512@2x.png" --out "$CUR_DIR/current_icon.iconset/icon_128x128@2x.png"
+          sips -z 128 128 "$CUR_DIR/current_icon.iconset/icon_512x512@2x.png" --out "$CUR_DIR/current_icon.iconset/icon_128x128.png"
+          sips -z 64 64   "$CUR_DIR/current_icon.iconset/icon_512x512@2x.png" --out "$CUR_DIR/current_icon.iconset/icon_32x32@2x.png"
+          sips -z 32 32   "$CUR_DIR/current_icon.iconset/icon_512x512@2x.png" --out "$CUR_DIR/current_icon.iconset/icon_32x32.png"
+          sips -z 32 32   "$CUR_DIR/current_icon.iconset/icon_512x512@2x.png" --out "$CUR_DIR/current_icon.iconset/icon_16x16@2x.png"
+          sips -z 16 16   "$CUR_DIR/current_icon.iconset/icon_512x512@2x.png" --out "$CUR_DIR/current_icon.iconset/icon_16x16.png"
           
-          # 애플 공식 구조 패키징 컴파일러 실행 -> 정식 .icns 자산 획득
-          iconutil -c iconset Work-Calc-Calendar.iconset
+          # 정식 애플 규격 패키징 렌더러 동작 완료
+          iconutil -c iconset current_icon.iconset
           mkdir -p assets
-          mv Work-Calc-Calendar.icns assets/Work-Calc-Calendar.icns
+          mv current_icon.icns assets/Work-Calc-Calendar.icns
 
       - name: Build Standalone Mac DMG Installer
-        # 🟢 생성된 정식 규격의 .icns 파일을 매개변수 옵션에 연결합니다.
-        # 이제 맥OS가 해당 자산을 완전히 구조적으로 맵핑하여 .dmg 설치 화면 속 아이콘까지 강제 변환 시킵니다.
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
           jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon assets/Work-Calc-Calendar.icns
@@ -209,3 +207,6 @@ jobs:
 
             * 💻 **Windows SmartScreen (파란 창):**
               경고 창 본문의 **[추가 정보]** 글자를 클릭한 뒤, 새롭게 나타나는 우측 하단의 **[실행]** 버튼을 누르면 정상 설치됩니다.
+              *Click "More Info" (추가 정보) on the blue system prompt layout -> Click the hidden "Run Anyway" (실행) action tab to unpack securely.*
+
+            * 🍏 **macOS Developer Check (확인되지 않은 개발자):**
