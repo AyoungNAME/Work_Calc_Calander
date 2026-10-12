@@ -8,7 +8,7 @@ on:
 
 jobs:
   # -----------------------------------------------------------------
-  # 1. 윈도우용 .exe 빌드 환경 (경로 충돌 완전 파쇄)
+  # 1. 윈도우용 .exe 빌드 환경 (인라인 오토 스캔 완비)
   # -----------------------------------------------------------------
   build-windows:
     runs-on: windows-latest
@@ -32,10 +32,11 @@ jobs:
           .\mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Windows EXE Installer
-        # 🟢 [정밀 매핑] 윈도우 탐색 규격을 완전히 준수하여 하위 폴더에서 .ico 파일을 강제 발굴 및 target\libs 폴더로 이관합니다.
+        # 🟢 [정밀 매핑] target\libs\ 폴더로 메인 JAR를 복사한 뒤,
+        # 상위 디렉토리(..) 구조 전체를 역으로 뒤져서 .ico 파일을 무조건 찾아내어 target\libs\icon.ico로 강제 복사해 결합합니다.
         run: |
           copy target\demo1-1.0-SNAPSHOT.jar target\libs\
-          powershell -Command "Get-ChildItem -Recurse -Filter '*Work-Calc-Calendar.ico' | Select-Object -First 1 | Foreach-Object { Copy-Item \$_.FullName -Destination 'target\libs\icon.ico' }"
+          powershell -Command "Get-ChildItem -Path ..\.. -Recurse -Filter '*Work-Calc-Calendar.ico' | Select-Object -First 1 | Foreach-Object { Copy-Item \$_.FullName -Destination 'target\libs\icon.ico' }"
           jpackage --type exe --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --win-dir-chooser --win-shortcut --icon target\libs\icon.ico
 
       - name: Upload Windows Artifact
@@ -45,7 +46,7 @@ jobs:
           path: ./*.exe
 
   # -----------------------------------------------------------------
-  # 2. 맥용 .dmg 빌드 환경 (문자열 파싱 에러 완전 격리 파쇄)
+  # 2. 맥용 .dmg 빌드 환경 (인라인 오토 스캔 완비)
   # -----------------------------------------------------------------
   build-mac:
     runs-on: macos-latest
@@ -70,10 +71,11 @@ jobs:
           ./mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Mac DMG Installer
-        # 🟢 [정밀 매핑] find 명령어를 마크다운 기준 도트(.) 상대 경로 기표로 보정하여 파일 유실 버그를 완벽하게 정복했습니다.
+        # 🟢 [정밀 매핑] 맥 환경에서도 동일하게 상위 경로(../../) 전체를 뒤져서 .icns 아이콘 자산을 추적한 후
+        # target/libs/icon.icns에 정확하게 안착시켜 런타임 누수를 소멸시킵니다.
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
-          find . -name "*Work-Calc-Calendar.icns" -exec cp {} target/libs/icon.icns \;
+          find ../.. -name "*Work-Calc-Calendar.icns" -exec cp {} target/libs/icon.icns \;
           jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon target/libs/icon.icns
 
       - name: Upload Mac Artifact
