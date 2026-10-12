@@ -57,42 +57,35 @@ public class HelloApplication extends Application {
 
     @Override
     public void start(Stage loadingStage) {
-        // 폴더 및 디렉토리가 하드디스크에 없다면 자동으로 생성해 주는 초기화 함수 가동
         initializeStorageDirectory();
-
-        // 프로그램이 켜질 때 예전 저장 데이터를 하드디스크에서 가져옵니다.
         loadDataFromDisk();
 
-        // 🎯 [자바 코드 레벨 아이콘 버그 완전 분쇄]
-        // jpackage 패키징 이후에도 최상단 루트 폴더의 아이콘 파일을 자바FX 엔진이 강제로 읽어오도록 경로를 정밀 바인딩합니다.
+        // 🎯 [자바 코드 레벨 실행 앱 아이콘 버그 완전 분쇄]
+        // 런타임 가동 즉시 assets 폴더 내부의 ico/icns 파일을 감지하여 윈도우/맥 가상 프레임 및 독바에 고정합니다.
         try {
             boolean isDarkMode = checkOSDarkMode();
-            File iconFile = new File("icon.icns"); // 맥OS용 기본 타깃
+            File iconFile = new File("assets" + File.separator + "icon.icns");
 
-            // 윈도우 환경일 경우 확장자를 .ico로 동적 스위칭합니다.
             if (System.getProperty("os.name").toLowerCase().contains("win")) {
-                iconFile = new File("icon.ico");
+                iconFile = new File("assets" + File.separator + "icon.ico");
             }
 
             if (iconFile.exists()) {
-                // 실물 이미지 파일의 로컬 URI 주소를 추출하여 자바FX 내부 스테이지에 주입합니다.
                 javafx.scene.image.Image appIcon = new javafx.scene.image.Image(iconFile.toURI().toString());
                 loadingStage.getIcons().add(appIcon);
 
-                // 🍏 맥(macOS) 전용 독(Dock) 바 및 앱 강제 로고 각인 동기화 엔진 가동
+                // 🍏 맥(macOS) 전용 독(Dock) 바 세팅 동기화 가동
                 if (System.getProperty("os.name").toLowerCase().contains("mac")) {
                     try {
-                        // WritableImage 스냅샷 방식 대신 물리 파일 스트림을 이용해 맥 OS 커널 독 바에 다이렉트로 투하합니다.
                         java.awt.image.BufferedImage awtImage = javax.imageio.ImageIO.read(iconFile);
                         if (awtImage != null) {
                             java.awt.Taskbar.getTaskbar().setIconImage(awtImage);
                         }
                     } catch (Exception ex) {
-                        // 맥OS 환경 버전 및 보안 샌드박스 예외 펜스
+                        // 맥 보안 샌드박스 예외 펜스
                     }
                 }
             } else {
-                // 💡 만약 루트에 실물 파일이 없을 경우 기존의 AppLogoUI 스냅샷 백업 엔진으로 우회 구동하여 팅김을 방지합니다.
                 Pane systemIconLogo = AppLogoUI.createLogo(128, isDarkMode);
                 javafx.scene.SnapshotParameters params = new javafx.scene.SnapshotParameters();
                 params.setFill(Color.TRANSPARENT);
@@ -103,8 +96,7 @@ public class HelloApplication extends Application {
             e.printStackTrace();
         }
 
-        // 👉 이 아래에 있는 loadingStage.initStyle(StageStyle.TRANSPARENT); 구역부터는 기존 코드를 그대로 유지하시면 됩니다!
-
+        // 👉 이 아래에 있는 loadingStage.initStyle(StageStyle.TRANSPARENT);
 
         loadingStage.initStyle(StageStyle.TRANSPARENT);
         boolean isDarkMode = checkOSDarkMode();
