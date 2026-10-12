@@ -4,175 +4,170 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>part</groupId>
-    <artifactId>demo1</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <name>demo1</name>
+        <groupId>part</groupId>
+        <artifactId>demo1</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <name>demo1</name>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <junit.version>5.12.1</junit.version>
-        <!-- ⚙️ JavaFX 21 및 빌드 최적화를 위해 컴파일러 대상을 JDK 21 표준으로 완벽히 동기화합니다. -->
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-    </properties>
+        <properties>
+            <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+            <junit.version>5.12.1</junit.version>
+            <maven.compiler.source>21</maven.compiler.source>
+            <maven.compiler.target>21</maven.compiler.target>
+        </properties>
 
-    <dependencies>
-        <!-- JavaFX 핵심 컨트롤 컴포넌트 -->
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-controls</artifactId>
-            <version>21.0.6</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
-            <version>21.0.6</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-web</artifactId>
-            <version>21.0.6</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-swing</artifactId>
-            <version>21.0.6</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-media</artifactId>
-            <version>21.0.6</version>
-        </dependency>
-
-        <!-- UI 확장 UI 테마 툴킷 라이브러리셋 -->
-        <dependency>
-            <groupId>org.controlsfx</groupId>
-            <artifactId>controlsfx</artifactId>
-            <version>11.2.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.dlsc.formsfx</groupId>
-            <artifactId>formsfx-core</artifactId>
-            <version>11.6.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.openjfx</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>net.synedra</groupId>
-            <artifactId>validatorfx</artifactId>
-            <version>0.6.1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.openjfx</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.kordamp.ikonli</groupId>
-            <artifactId>ikonli-javafx</artifactId>
-            <version>12.3.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.kordamp.bootstrapfx</groupId>
-            <artifactId>bootstrapfx-core</artifactId>
-            <version>0.4.0</version>
-        </dependency>
-        <dependency>
-            <groupId>eu.hansolo</groupId>
-            <artifactId>tilesfx</artifactId>
-            <version>21.0.9</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.openjfx</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.github.almasb</groupId>
-            <artifactId>fxgl</artifactId>
-            <version>11.17</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.openjfx</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <!-- ================================================================= -->
-        <!-- 📊 [신규 추가] 엑셀(.xlsx) 파일 연동 및 내보내기를 위한 Apache POI 엔진 -->
-        <!-- ================================================================= -->
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml</artifactId>
-            <version>5.4.0</version>
-        </dependency>
-
-        <!-- 단위 테스트 구동 모듈 -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <!-- 자바 컴파일러 플러그인 구성 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
-                <configuration>
-                    <source>21</source>
-                    <target>21</target>
-                </configuration>
-            </plugin>
-
-            <!-- 자바FX 빌드 오케스트레이션 플러그인 구성 -->
-            <plugin>
+        <dependencies>
+            <!-- JavaFX 핵심 컨트롤 컴포넌트 -->
+            <dependency>
                 <groupId>org.openjfx</groupId>
-                <artifactId>javafx-maven-plugin</artifactId>
-                <version>0.0.8</version>
-                <executions>
-                    <execution>
-                        <!-- Default configuration for running with: mvn clean javafx:run -->
-                        <id>default-cli</id>
-                        <configuration>
-                            <!-- 🟢 메인 진입 경로를 Launcher 클래스로 우회 지정하여 윈도우 실행 팅김 에러를 해결합니다. -->
-                            <mainClass>part.demo1.Launcher</mainClass>
-                            <launcher>app</launcher>
-                            <jlinkZipName>app</jlinkZipName>
-                            <jlinkImageName>app</jlinkImageName>
-                            <noManPages>true</noManPages>
-                            <stripDebug>true</stripDebug>
-                            <noHeaderFiles>true</noHeaderFiles>
+                <artifactId>javafx-controls</artifactId>
+                <version>21.0.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-fxml</artifactId>
+                <version>21.0.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-web</artifactId>
+                <version>21.0.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-swing</artifactId>
+                <version>21.0.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-media</artifactId>
+                <version>21.0.6</version>
+            </dependency>
 
-                            <!-- ================================================================= -->
-                            <!-- 🎯 [루트 경로 동기화] resources 폴더 내부가 아닌 최상단 루트의 실물 아이콘으로 타깃 매핑 고정 -->
-                            <!-- ================================================================= -->
-                            <options>
-                                <option>--icon</option>
-                                <option>${project.basedir}/icon.icns</option>
-                            </options>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-</project>
+            <!-- UI 확장 UI 테마 툴킷 라이브러리셋 -->
+            <dependency>
+                <groupId>org.controlsfx</groupId>
+                <artifactId>controlsfx</artifactId>
+                <version>11.2.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.dlsc.formsfx</groupId>
+                <artifactId>formsfx-core</artifactId>
+                <version>11.6.0</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.openjfx</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>net.synedra</groupId>
+                <artifactId>validatorfx</artifactId>
+                <version>0.6.1</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.openjfx</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.kordamp.ikonli</groupId>
+                <artifactId>ikonli-javafx</artifactId>
+                <version>12.3.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kordamp.bootstrapfx</groupId>
+                <artifactId>bootstrapfx-core</artifactId>
+                <version>0.4.0</version>
+            </dependency>
+            <dependency>
+                <groupId>eu.hansolo</groupId>
+                <artifactId>tilesfx</artifactId>
+                <version>21.0.9</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.openjfx</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.github.almasb</groupId>
+                <artifactId>fxgl</artifactId>
+                <version>11.17</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.openjfx</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <!-- Apache POI 엑셀 엔진 인프라 -->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>5.4.0</version>
+            </dependency>
+
+            <!-- 단위 테스트 구동 모듈 -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+
+        <build>
+            <plugins>
+                <!-- 자바 컴파일러 플러그인 구성 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.13.0</version>
+                    <configuration>
+                        <source>21</source>
+                        <target>21</target>
+                    </configuration>
+                </plugin>
+
+                <!-- 자바FX 빌드 오케스트레이션 플러그인 구성 -->
+                <plugin>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-maven-plugin</artifactId>
+                    <version>0.0.8</version>
+                    <executions>
+                        <execution>
+                            <id>default-cli</id>
+                            <configuration>
+                                <mainClass>part.demo1.Launcher</mainClass>
+                                <launcher>app</launcher>
+                                <jlinkZipName>app</jlinkZipName>
+                                <jlinkImageName>app</jlinkImageName>
+                                <noManPages>true</noManPages>
+                                <stripDebug>true</stripDebug>
+                                <noHeaderFiles>true</noHeaderFiles>
+
+                                <!-- ================================================================= -->
+                                <!-- 🎯 [아이콘 증발 버그 파쇄] jpackageOptions 내부 진입점 명시 동기화 완료 -->
+                                <!-- ================================================================= -->
+                                <jpackageOptions>
+                                    <option>--icon</option>
+                                    <option>${project.basedir}/icon.icns</option>
+                                </jpackageOptions>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </build>
+    </project>
