@@ -153,8 +153,8 @@
                         <!-- Default configuration for running with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <!-- 🛠️ 메인 클래스 진입 경로 패턴을 순수 표준 규격으로 완벽히 매핑 고정 -->
-                            <mainClass>part.demo1.HelloApplication</mainClass>
+                            <!-- 🟢 [수정 완료] 메인 진입 경로를 Launcher 클래스로 우회 지정하여 윈도우 실행 팅김 에러를 해결합니다. -->
+                            <mainClass>part.demo1.Launcher</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>
