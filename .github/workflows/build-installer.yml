@@ -43,7 +43,7 @@ jobs:
           path: ./*.exe
 
   # -----------------------------------------------------------------
-  # 2. 맥용 .dmg 빌드 환경 (🚨 런타임 가상 경로 탐색 버그 전면 해결본)
+  # 2. 맥용 .dmg 빌드 환경 (🚨 하위 폴더 전방위 추적 및 탐색 검증 완료)
   # -----------------------------------------------------------------
   build-mac:
     runs-on: macos-latest
@@ -68,13 +68,14 @@ jobs:
           ./mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Mac DMG Installer
-        # 🟢 [버그 해결 핵심]
-        # 에러를 뿜던 \$ 기호 변수 추적 방식을 전면 파쇄하고, 마크다운 표준 상대 경로 기표인 도트(.)를 기반으로
-        # 중복 폴더 최하단까지 뒤져 'Work-Calc-Calendar.icns' 파일을 무조건 발굴해 냅니다.
-        # 찾아낸 자산은 target/libs/icon.icns로 안전하게 강제 이관되어 복사 성공 마크를 획득합니다.
+        # 🟢 [버그 원천 해결]
+        # 상대 경로의 대소문자나 하위 중복 폴더의 깊이에 절대 간섭받지 않도록,
+        # 가상 러너의 현재 작업 디렉토리 기준 '상위 2단계 조상 폴더(../../)'부터 시작하여 프로젝트 전체 하위 트리를
+        # 와일드카드 기표(*Work-Calc-Calendar.icns)로 전방위 추적합니다.
+        # 발견된 물리 파일은 jpackage 가동 본진인 target/libs/icon.icns 자리에 강제로 무조건 복사되어 에러를 완벽하게 정복합니다.
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
-          find . -name "Work-Calc-Calendar.icns" -exec cp {} target/libs/icon.icns \;
+          find ../../ -name "*Work-Calc-Calendar.icns" -exec cp {} target/libs/icon.icns \;
           jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon target/libs/icon.icns
 
       - name: Upload Mac Artifact
@@ -159,5 +160,5 @@ jobs:
               *Click "More Info" (추가 정보) on the blue system prompt layout -> Click the hidden "Run Anyway" (실행) action tab to unpack securely.*
 
             * 🍏 **macOS Developer Check (확인되지 않은 개발자):**
-              앱을 응용 프로그램 폴막으로 복사한 후, 맥북의 **[시스템 설정] ➡️ [개인정보 보호 및 보안]** 메뉴로 이동하여 스크롤을 내린 후 **[확인 없이 열기] (Open Anyway)**를 클릭하고 인증해 주시면 이후부터 정상 가동됩니다.
+              앱을 응용 프로그램 폴더로 복사한 후, 맥북의 **[시스템 설정] ➡️ [개인정보 보호 및 보안]** 메뉴로 이동하여 스크롤을 내린 후 **[확인 없이 열기] (Open Anyway)**를 클릭하고 인증해 주시면 이후부터 정상 가동됩니다.
               *Navigate to System Settings (시스템 설정) ➡️ Privacy & Security (개인정보 보호 및 보안) ➡️ Scroll to the bottom and click "Open Anyway" (확인 없이 열기) to register permissions instantly.*
