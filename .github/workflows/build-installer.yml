@@ -8,7 +8,7 @@ on:
 
 jobs:
   # -----------------------------------------------------------------
-  # 1. 윈도우용 .exe 빌드 환경 (경로 오토 핏 완비)
+  # 1. 윈도우용 .exe 빌드 환경 (경로 오류 완전 격리 파쇄)
   # -----------------------------------------------------------------
   build-windows:
     runs-on: windows-latest
@@ -32,10 +32,10 @@ jobs:
           .\mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Windows EXE Installer
-        # 🟢 [경로 버그 패치] 하위 폴더 깊이에 상관없이 assets 폴더를 찾아내어 현재 빌드 루트(target/libs)로 아이콘을 자동 복사해옵니다.
+        # 🟢 [경로 픽스] 프로젝트 전체 내부를 순회하며 .ico 파일을 찾아 target/libs/icon.ico 이름으로 강제 복사 시킵니다.
         run: |
           copy target\demo1-1.0-SNAPSHOT.jar target\libs\
-          powershell -Command "Get-ChildItem -Recurse -Filter 'Work-Calc-Calendar.ico' | Select-Object -First 1 | Foreach-Object { Copy-Item \$_.FullName -Destination 'target/libs/icon.ico' }"
+          powershell -Command "Get-ChildItem -Recurse -Filter '*Work-Calc-Calendar.ico' | Select-Object -First 1 | Foreach-Object { Copy-Item \$_.FullName -Destination 'target/libs/icon.ico' }"
           jpackage --type exe --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --win-dir-chooser --win-shortcut --icon target/libs/icon.ico
 
       - name: Upload Windows Artifact
@@ -45,7 +45,7 @@ jobs:
           path: ./*.exe
 
   # -----------------------------------------------------------------
-  # 2. 맥용 .dmg 빌드 환경 (경로 오토 핏 완비)
+  # 2. 맥용 .dmg 빌드 환경 (경로 오류 완전 격리 파쇄)
   # -----------------------------------------------------------------
   build-mac:
     runs-on: macos-latest
@@ -70,10 +70,10 @@ jobs:
           ./mvnw dependency:copy-dependencies -DoutputDirectory=target/libs
 
       - name: Build Standalone Mac DMG Installer
-        # 🟢 [경로 버그 패치] 맥 환경에서도 동일하게 find 커맨드를 통해 .icns 파일을 스스로 추적하여 런타임에 결합합니다.
+        # 🟢 [경로 픽스] 맥 환경에서도 동일하게 전체 경로 스캔 후 .icns 파일을 target/libs/icon.icns로 끌어와 안전하게 병합합니다.
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
-          find . -name "Work-Calc-Calendar.icns" -exec cp {} target/libs/icon.icns \;
+          find . -name "*Work-Calc-Calendar.icns" -exec cp {} target/libs/icon.icns \;
           jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon target/libs/icon.icns
 
       - name: Upload Mac Artifact
@@ -133,7 +133,7 @@ jobs:
               *Export fully formatted, color-coded grid calendars directly into .xlsx (Excel) sheets structured to dynamically upscale/downscale into exactly one A4 page for flawless hardcopy printing.*
 
             * **순수 외부 독립 앱 가동 (No Java Required)**
-              프로그램 내부에 초소형 자바 엔진(JDK 21 런타임)이 통째로 패키징되어 있으므로, 컴퓨터에 자바가 깔려있지 않은 일반 사용자도 다운로드 후 더블클릭만으로 즉시 일반 앱처럼 사용할 수 있습니다.
+              程序 내부에 초소형 자바 엔진(JDK 21 런타임)이 통째로 패키징되어 있으므로, 컴퓨터에 자바가 깔려있지 않은 일반 사용자도 다운로드 후 더블클릭만으로 즉시 일반 앱처럼 사용할 수 있습니다.
               *Shipped as pre-packaged .exe / .dmg files embedded with a micro-runtime engine—download and use instantly without any external software dependencies.*
 
             ---
