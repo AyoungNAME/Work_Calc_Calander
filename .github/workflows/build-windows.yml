@@ -1,8 +1,11 @@
-name: Build Cross-Platform Installers (Windows & Mac)
+name: Build and Release Cross-Platform Installers
 
 on:
   push:
-    branches: [ main ] # 💡 만약 사용 중이신 브랜치 이름이 master라면 master로 변경하세요.
+    # 🟢 [핵심 규칙] 일반 push 때는 빌드 테스트만 하고, v1.0.0 같은 '태그(Tag)'를 붙여서 push할 때만 전 세계 공개 출시 페이지를 자동 개설합니다.
+    tags:
+      - 'v*'
+  workflow_dispatch: # 언제든 수동으로 빌드를 누를 수 있는 버튼도 활성화해 둡니다.
 
 jobs:
   # -----------------------------------------------------------------
@@ -32,16 +35,16 @@ jobs:
       - name: Build Standalone Windows EXE Installer
         run: |
           copy target\demo1-1.0-SNAPSHOT.jar target\libs\
-          jpackage --type exe --name "TheProject" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --win-dir-chooser --win-shortcut
+          jpackage --type exe --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication --win-dir-chooser --win-shortcut
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TheProject-Windows-Installer
+          name: Work-Calc-Calendar-Windows
           path: ./*.exe
 
   # -----------------------------------------------------------------
-  # 2. 맥용 .dmg 빌드 환경 (M1/M2/M3 및 인텔 맥 모두 가동 가능)
+  # 2. 맥용 .dmg 빌드 환경
   # -----------------------------------------------------------------
   build-mac:
     runs-on: macos-latest
@@ -68,10 +71,45 @@ jobs:
       - name: Build Standalone Mac DMG Installer
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
-          jpackage --type dmg --name "TheProject" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication
+          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.HelloApplication
 
       - name: Upload Mac Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TheProject-Mac-Installer
+          name: Work-Calc-Calendar-Mac
           path: ./*.dmg
+
+  # -----------------------------------------------------------------
+  # 3. 🎉 [신규 추가] 비회원 전용 로그인 프리 다이렉트 다운로드 링크 생성 자동화
+  # -----------------------------------------------------------------
+  publish-release:
+    needs: [build-windows, build-mac]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # GitHub 서버에 출시 파일을 쓸 수 있는 권한을 강제 획득합니다.
+    steps:
+      - name: Download Windows Asset
+        uses: actions/download-artifact@v4
+        with:
+          name: Work-Calc-Calendar-Windows
+          path: ./release-artifacts
+
+      - name: Download Mac Asset
+        uses: actions/download-artifact@v4
+        with:
+          name: Work-Calc-Calendar-Mac
+          path: ./release-artifacts
+
+      - name: Deploy Unlocked Public Release Page
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./release-artifacts/*
+          name: Official Release — Work Calc Calendar \${{ github.ref_name }}
+          body: |
+            📊 **Work Calc Calendar 공식 배포판이 출시되었습니다!**
+            
+            로그인 없이 아래 링크를 클릭하시면 즉시 설치 파일이 다운로드됩니다.
+            * 윈도우 사용자: 하단의 `.exe` 다운로드
+            * 맥 사용자: 하단의 `.dmg` 다운로드
+          draft: false
+          prerelease: false
