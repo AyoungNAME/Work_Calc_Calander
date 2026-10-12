@@ -57,30 +57,54 @@ public class HelloApplication extends Application {
 
     @Override
     public void start(Stage loadingStage) {
+        // 폴더 및 디렉토리가 하드디스크에 없다면 자동으로 생성해 주는 초기화 함수 가동
         initializeStorageDirectory();
+
+        // 프로그램이 켜질 때 예전 저장 데이터를 하드디스크에서 가져옵니다.
         loadDataFromDisk();
 
-        // 🟢 [시스템 아이콘 알파 채널 투명화 보정 엔진]
+        // 🎯 [자바 코드 레벨 아이콘 버그 완전 분쇄]
+        // jpackage 패키징 이후에도 최상단 루트 폴더의 아이콘 파일을 자바FX 엔진이 강제로 읽어오도록 경로를 정밀 바인딩합니다.
         try {
-            Pane systemIconLogo = AppLogoUI.createLogo(128, checkOSDarkMode());
+            boolean isDarkMode = checkOSDarkMode();
+            File iconFile = new File("icon.icns"); // 맥OS용 기본 타깃
 
-            javafx.scene.SnapshotParameters params = new javafx.scene.SnapshotParameters();
-            params.setFill(Color.TRANSPARENT);
+            // 윈도우 환경일 경우 확장자를 .ico로 동적 스위칭합니다.
+            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                iconFile = new File("icon.ico");
+            }
 
-            javafx.scene.image.WritableImage snapshot = systemIconLogo.snapshot(params, null);
-            loadingStage.getIcons().add(snapshot);
+            if (iconFile.exists()) {
+                // 실물 이미지 파일의 로컬 URI 주소를 추출하여 자바FX 내부 스테이지에 주입합니다.
+                javafx.scene.image.Image appIcon = new javafx.scene.image.Image(iconFile.toURI().toString());
+                loadingStage.getIcons().add(appIcon);
 
-            if (System.getProperty("os.name").toLowerCase().contains("mac")) {
-                try {
-                    java.awt.image.BufferedImage awtImage = javafx.embed.swing.SwingFXUtils.fromFXImage(snapshot, null);
-                    java.awt.Taskbar.getTaskbar().setIconImage(awtImage);
-                } catch (Exception ex) {
-                    // 맥 환경 보안 펜스 예외 처리
+                // 🍏 맥(macOS) 전용 독(Dock) 바 및 앱 강제 로고 각인 동기화 엔진 가동
+                if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+                    try {
+                        // WritableImage 스냅샷 방식 대신 물리 파일 스트림을 이용해 맥 OS 커널 독 바에 다이렉트로 투하합니다.
+                        java.awt.image.BufferedImage awtImage = javax.imageio.ImageIO.read(iconFile);
+                        if (awtImage != null) {
+                            java.awt.Taskbar.getTaskbar().setIconImage(awtImage);
+                        }
+                    } catch (Exception ex) {
+                        // 맥OS 환경 버전 및 보안 샌드박스 예외 펜스
+                    }
                 }
+            } else {
+                // 💡 만약 루트에 실물 파일이 없을 경우 기존의 AppLogoUI 스냅샷 백업 엔진으로 우회 구동하여 팅김을 방지합니다.
+                Pane systemIconLogo = AppLogoUI.createLogo(128, isDarkMode);
+                javafx.scene.SnapshotParameters params = new javafx.scene.SnapshotParameters();
+                params.setFill(Color.TRANSPARENT);
+                javafx.scene.image.WritableImage snapshot = systemIconLogo.snapshot(params, null);
+                loadingStage.getIcons().add(snapshot);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        // 👉 이 아래에 있는 loadingStage.initStyle(StageStyle.TRANSPARENT); 구역부터는 기존 코드를 그대로 유지하시면 됩니다!
+
 
         loadingStage.initStyle(StageStyle.TRANSPARENT);
         boolean isDarkMode = checkOSDarkMode();
