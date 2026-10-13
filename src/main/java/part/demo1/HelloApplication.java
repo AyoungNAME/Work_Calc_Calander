@@ -33,6 +33,7 @@ public class HelloApplication extends Application {
 
     private Map<String, ProjectData> projectStorage = new HashMap<>();
     private YearMonth currentYearMonth = YearMonth.now();
+    private javafx.scene.image.Image appIcon;
 
     // [데이터 저장소] 프로젝트 이름을 관리하는 클래스
     public static class ProjectData implements Serializable {
@@ -64,47 +65,8 @@ public class HelloApplication extends Application {
         // 프로그램이 켜질 때 예전 저장 데이터를 하드디스크에서 가져옵니다.
         loadDataFromDisk();
 
-        // 🎯 [아이콘 증발 버그 전면 파쇄] src/main/resources 내부 자산을 강제 추출하는 정식 클래스 로더 엔진 탑재
-        try {
-            boolean isDarkMode = checkOSDarkMode();
-
-            // 1. 메이븐 리소스 루트를 기준으로 삼아 내부 격리 경로를 정밀 타격 지목합니다.
-            String iconResourcePath = "/assets/icons.icns";
-            if (System.getProperty("os.name").toLowerCase().contains("win")) {
-                iconResourcePath = "/assets/icons.ico";
-            }
-
-            // 2. 자바 고유의 클래스 로더 스트림을 열어 JAR 및 포터블 앱 내부 깊숙이 임베디드된 아이콘을 낚아챕니다.
-            java.net.URL iconUrl = getClass().getResource(iconResourcePath);
-
-            if (iconUrl != null) {
-                // 실물 리소스 URI 주소 바인딩을 통해 인텔리제이 가동 및 배포 실행 상태 모두에 완벽 가시성을 부여합니다.
-                javafx.scene.image.Image compiledIcon = new javafx.scene.image.Image(iconUrl.toExternalForm());
-                loadingStage.getIcons().add(compiledIcon);
-
-                // 🍏 맥(macOS) 독(Dock) 바 영역의 자바 기본 Duke 마스코트를 밀어내고 고유 아이콘 영구 각인
-                if (System.getProperty("os.name").toLowerCase().contains("mac")) {
-                    try (InputStream macStream = getClass().getResourceAsStream("/assets/icons.icns")) {
-                        if (macStream != null) {
-                            java.awt.image.BufferedImage awtImg = javax.imageio.ImageIO.read(macStream);
-                            if (awtImg != null) {
-                                java.awt.Taskbar.getTaskbar().setIconImage(awtImg);
-                            }
-                        }
-                    } catch (Exception ex) {
-                        // 맥 OS 환경 보안 및 샌드박스 예외 방어 펜스
-                    }
-                }
-            } else {
-                // 💡 최후의 예비로: 혹시 모를 로딩 유실 발생 시 프로그램 정지를 막기 위해 캔버스 그래픽 백업 펜스를 가동합니다.
-                Pane systemIconLogo = AppLogoUI.createLogo(128, isDarkMode);
-                javafx.scene.SnapshotParameters params = new javafx.scene.SnapshotParameters();
-                params.setFill(Color.TRANSPARENT);
-                loadingStage.getIcons().add(systemIconLogo.snapshot(params, null));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        loadAppIcon();
+        applyAppIcon(loadingStage);
 
         // 👉 이 아래에 있는 loadingStage.initStyle(StageStyle.TRANSPARENT); 구역부터는 기존 코드를 그대로 유지하시면 됩니다!
 
@@ -163,6 +125,42 @@ public class HelloApplication extends Application {
         }
     }
 
+    private void loadAppIcon() {
+        java.net.URL iconUrl = getClass().getResource("/assets/app-icon.png");
+        if (iconUrl == null) {
+            System.err.println("Application icon not found: /assets/app-icon.png");
+            return;
+        }
+
+        javafx.scene.image.Image image = new javafx.scene.image.Image(iconUrl.toExternalForm());
+        if (image.isError()) {
+            System.err.println("Could not load application icon: " + image.getException());
+            return;
+        }
+        appIcon = image;
+
+        // JavaFX window icons and macOS Dock icons use different APIs.
+        if (System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac")) {
+            try {
+                if (java.awt.Taskbar.isTaskbarSupported()
+                        && java.awt.Taskbar.getTaskbar().isSupported(java.awt.Taskbar.Feature.ICON_IMAGE)) {
+                    java.awt.image.BufferedImage awtImage = javax.imageio.ImageIO.read(iconUrl);
+                    if (awtImage != null) {
+                        java.awt.Taskbar.getTaskbar().setIconImage(awtImage);
+                    }
+                }
+            } catch (Exception ex) {
+                System.err.println("Could not set macOS Dock icon: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void applyAppIcon(Stage stage) {
+        if (appIcon != null) {
+            stage.getIcons().setAll(appIcon);
+        }
+    }
+
     private boolean checkOSDarkMode() {
         String os = System.getProperty("os.name").toLowerCase();
         try {
@@ -188,6 +186,7 @@ public class HelloApplication extends Application {
     private void showMainWindow(boolean isDarkMode) {
         try {
             Stage mainStage = new Stage();
+            applyAppIcon(mainStage);
             mainStage.initStyle(StageStyle.TRANSPARENT);
 
             BorderPane wrapperLayout = new BorderPane();
@@ -269,6 +268,7 @@ public class HelloApplication extends Application {
     }
     private void handleNewCalendarWindow(Stage ownerStage, boolean isDarkMode) {
         Stage dialogStage = new Stage();
+        applyAppIcon(dialogStage);
         dialogStage.initOwner(ownerStage);
         dialogStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
         dialogStage.initStyle(StageStyle.TRANSPARENT);
@@ -338,6 +338,7 @@ public class HelloApplication extends Application {
     }
     private void handleContinueFileWindow(Stage ownerStage, boolean isDarkMode) {
         Stage selectionStage = new Stage();
+        applyAppIcon(selectionStage);
         selectionStage.initStyle(StageStyle.TRANSPARENT);
         selectionStage.initOwner(ownerStage);
         BorderPane layout = new BorderPane();
@@ -504,6 +505,7 @@ public class HelloApplication extends Application {
     }
     private void openCalendarWindow(Stage ownerStage, boolean isDarkMode, ProjectData projectData) {
         Stage calStage = new Stage();
+        applyAppIcon(calStage);
         calStage.initStyle(StageStyle.TRANSPARENT);
         calStage.initOwner(ownerStage);
         BorderPane mainLayout = new BorderPane();
@@ -655,6 +657,7 @@ public class HelloApplication extends Application {
     private void openTimeFeatureDialog(Stage parentStage, boolean isDarkMode, String dateKey, ProjectData projectData, Runnable onSaveSuccess) {
         // 🟢 1. OS 순정 타이틀바를 완전히 삭제하여 투명한 커스텀 도화지 레이어로 만듭니다.
         Stage dialogStage = new Stage();
+        applyAppIcon(dialogStage);
         dialogStage.initStyle(StageStyle.TRANSPARENT);
         dialogStage.initOwner(parentStage);
         dialogStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);

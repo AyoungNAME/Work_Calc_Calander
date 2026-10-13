@@ -36,7 +36,7 @@ jobs:
         # 지연을 유발하는 윈도우 MSI 인스톨러 과정을 완전히 삭제하고, 더블클릭 즉시 가동되는 포터블 단독 실행 폴더 구조를 만듭니다.
         run: |
           copy target\demo1-1.0-SNAPSHOT.jar target\libs\
-          jpackage --type app-image --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher
+          jpackage --type app-image --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --icon src/main/resources/assets/icons.ico
 
       - name: Zip Unlocked Windows Portable App
         # 🟢 빌드된 단독 실행 폴더 전체를 하나의 깔끔한 Work-Calc-Calendar-Windows.zip 파일로 압축합니다.
@@ -78,7 +78,8 @@ jobs:
       - name: Build Standalone Mac DMG Installer
         run: |
           cp target/demo1-1.0-SNAPSHOT.jar target/libs/
-          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media
+          sips -s format icns src/main/resources/assets/app-icon.png --out target/work-calc-calendar.icns
+          jpackage --type dmg --name "Work-Calc-Calendar" --input target/libs --main-jar demo1-1.0-SNAPSHOT.jar --main-class part.demo1.Launcher --module-path target/libs --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.swing,javafx.media --icon target/work-calc-calendar.icns
 
       - name: Upload Mac Artifact
         uses: actions/upload-artifact@v4
