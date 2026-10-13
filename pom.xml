@@ -152,47 +152,10 @@
         </plugins>
     </build>
 
-    <!-- 🍏 원격 깃허브 가상 서버가 환경에 맞춰 설치본 파일 자체(.exe, .dmg)의 외부 아이콘을 영구 각인하도록 유도하는 정식 프로필 인프라 -->
-    <profiles>
-        <profile>
-            <id>desktop-mac</id>
-            <activation>
-                <os><family>mac</family></os>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.openjfx</groupId>
-                        <artifactId>javafx-maven-plugin</artifactId>
-                        <configuration>
-                            <options>
-                                <option>--icon</option>
-                                <option>src/main/resources/assets/icons.icns</option>
-                            </options>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>desktop-windows</id>
-            <activation>
-                <os><family>windows</family></os>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.openjfx</groupId>
-                        <artifactId>javafx-maven-plugin</artifactId>
-                        <configuration>
-                            <options>
-                                <option>--icon</option>
-                                <option>src/main/resources/assets/icons.ico</option>
-                            </options>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
+    <!--
+      javafx-maven-plugin's <options> are JVM arguments. jpackage's icon option is
+      an installer-packaging option, so passing it here breaks javafx:run and
+      does not create an installer. Configure the icon on a jpackage step when
+      adding platform-specific installer builds.
+    -->
 </project>
