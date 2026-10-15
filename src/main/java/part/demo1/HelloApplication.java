@@ -27,7 +27,7 @@ public class HelloApplication extends Application {
     private double xOffset = 0;
     private double yOffset = 0;
 
-    // 📂 문서 폴더 하위에 새로운 앱 명칭으로 저장 폴더 트리를 완전 자동 빌드합니다.
+    // Section: Saved calendar storage location
     private static final String STORAGE_DIR_PATH = System.getProperty("user.home") + File.separator
             + "Documents" + File.separator + "Work Calc Calendar" + File.separator + "Saved Calendars";
 
@@ -35,7 +35,7 @@ public class HelloApplication extends Application {
     private YearMonth currentYearMonth = YearMonth.now();
     private javafx.scene.image.Image appIcon;
 
-    // [데이터 저장소] 프로젝트 이름을 관리하는 클래스
+    // Section: Calendar project data
     public static class ProjectData implements Serializable {
         private static final long serialVersionUID = 500L;
         public String projectName;
@@ -46,38 +46,39 @@ public class HelloApplication extends Application {
         }
     }
 
-    // [시간 데이터 구조] 사용자가 저장한 데이터 바구니
+    // Section: One day of recorded work time
     public static class TimeRecord implements Serializable {
         private static final long serialVersionUID = 500L;
-        public String type = "";        // "FROM_TO" or "TOTAL" or "CHECKED"
+        public String type = "";
         public String fromTime = "";
         public String toTime = "";
+        public String[] breakFromTimes = {"", "", ""};
+        public String[] breakToTimes = {"", "", ""};
         public String totalTime = "";
         public boolean isChecked = false;
     }
 
 
+    // Section: Application startup and loading screen
     @Override
     public void start(Stage loadingStage) {
-        // 폴더 및 디렉토리가 하드디스크에 없다면 자동으로 생성해 주는 초기화 함수 가동
         initializeStorageDirectory();
 
-        // 프로그램이 켜질 때 예전 저장 데이터를 하드디스크에서 가져옵니다.
         loadDataFromDisk();
 
         loadAppIcon();
         applyAppIcon(loadingStage);
 
-        // 👉 이 아래에 있는 loadingStage.initStyle(StageStyle.TRANSPARENT); 구역부터는 기존 코드를 그대로 유지하시면 됩니다!
 
 
 
         loadingStage.initStyle(StageStyle.TRANSPARENT);
+        // Dark mode and light mode: choose the splash screen palette from the OS theme.
         boolean isDarkMode = checkOSDarkMode();
         String backgroundColor = isDarkMode ? "#1E1E1E" : "#FFFFFF";
         String indicatorColor = isDarkMode ? "white" : "black";
 
-        // 🌓 [UI 테두리선 패치] 로딩 스플래시 화면 반대 색상 아웃라인 주입
+        // Colors: keep the splash background, indicator, and border readable in both themes.
         String borderColor = isDarkMode ? "#FFFFFF" : "#000000";
 
         ProgressIndicator progressIndicator = new ProgressIndicator();
@@ -85,10 +86,11 @@ public class HelloApplication extends Application {
         progressIndicator.setStyle("-fx-progress-color: " + indicatorColor + ";");
 
         StackPane root = new StackPane(progressIndicator);
+        // Window size: compact 250 by 250 splash screen.
         root.setPrefSize(250, 250);
         root.setStyle("-fx-background-color: " + backgroundColor + ";"
                 + " -fx-background-radius: 25px; -fx-border-radius: 25px;"
-                + " -fx-border-color: " + borderColor + "; -fx-border-width: 1px;" // 반전 테두리선 추가
+                + " -fx-border-color: " + borderColor + "; -fx-border-width: 1px;"
                 + " -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 15, 0, 0, 0);");
 
         root.setOnMousePressed(event -> {
@@ -114,6 +116,7 @@ public class HelloApplication extends Application {
         delay.play();
     }
 
+    // Section: Create the saved calendar folder
     private void initializeStorageDirectory() {
         try {
             File dir = new File(STORAGE_DIR_PATH);
@@ -121,12 +124,15 @@ public class HelloApplication extends Application {
                 dir.mkdirs();
             }
         } catch (Exception e) {
+            // Error handling: report storage folder setup problems.
             e.printStackTrace();
         }
     }
 
+    // Section: Load the application and Dock icons
     private void loadAppIcon() {
         java.net.URL iconUrl = getClass().getResource("/assets/app-icon.png");
+        // Error handling: continue without a custom icon when the asset is missing.
         if (iconUrl == null) {
             System.err.println("Application icon not found: /assets/app-icon.png");
             return;
@@ -139,7 +145,6 @@ public class HelloApplication extends Application {
         }
         appIcon = image;
 
-        // JavaFX window icons and macOS Dock icons use different APIs.
         if (System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac")) {
             try {
                 if (java.awt.Taskbar.isTaskbarSupported()
@@ -155,13 +160,16 @@ public class HelloApplication extends Application {
         }
     }
 
+    // Section: Apply the application icon to a window
     private void applyAppIcon(Stage stage) {
         if (appIcon != null) {
             stage.getIcons().setAll(appIcon);
         }
     }
 
+    // Section: Detect the operating system color theme
     private boolean checkOSDarkMode() {
+        // Dark mode and light mode: query macOS or Windows preferences.
         String os = System.getProperty("os.name").toLowerCase();
         try {
             if (os.contains("mac")) {
@@ -179,10 +187,14 @@ public class HelloApplication extends Application {
                     }
                 }
             }
-        } catch (Exception e) { return false; }
+        } catch (Exception e) {
+            // Error handling: use the light theme if OS theme detection fails.
+            return false;
+        }
         return false;
     }
 
+    // Section: Main window and New File or Continue File buttons
     private void showMainWindow(boolean isDarkMode) {
         try {
             Stage mainStage = new Stage();
@@ -192,9 +204,9 @@ public class HelloApplication extends Application {
             BorderPane wrapperLayout = new BorderPane();
             String mainBgColor = isDarkMode ? "#2D2D2D" : "#FFFFFF";
             String btnColor = isDarkMode ? "#FFFFFF" : "#333333";
+            // Colors: central foreground and background palette for the main window.
             String textColor = isDarkMode ? "#FFFFFF" : "#111111";
 
-            // 🌓 [UI 테두리선 패치] 메인 화면에 반대 색상 테두리 적용
             String borderColor = isDarkMode ? "#FFFFFF" : "#000000";
 
             String closeBtnHoverBg = isDarkMode ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.08)";
@@ -202,12 +214,12 @@ public class HelloApplication extends Application {
 
             wrapperLayout.setStyle("-fx-background-color: " + mainBgColor + ";"
                     + " -fx-background-radius: 20px; -fx-border-radius: 20px;"
-                    + " -fx-border-color: " + borderColor + "; -fx-border-width: 1px;" // 반전 테두리선 추가
+                    + " -fx-border-color: " + borderColor + "; -fx-border-width: 1px;"
                     + " -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 10, 0, 0, 0);");
 
-            // ❌ [닫기 버튼 깨짐 패치] 특수문자 '✕' 대신 알파벳 대문자 'X'를 사용해 말줄임표(...) 깨짐을 방지합니다.
             Button closeButton = new Button("X");
             closeButton.setPrefSize(32, 32);
+            // Fonts: set the close button font explicitly for consistent rendering.
             String closeBtnStyle = "-fx-background-color: transparent; -fx-text-fill: " + btnColor + "; -fx-font-size: 15px; -fx-font-weight: 900; -fx-cursor: hand; -fx-background-radius: 6px; -fx-font-family: 'Arial';";
             closeButton.setStyle(closeBtnStyle);
             closeButton.setOnMouseEntered(e -> closeButton.setStyle(closeBtnStyle + "-fx-background-color: " + closeBtnHoverBg + "; -fx-text-fill: " + closeBtnHoverText + ";"));
@@ -235,7 +247,9 @@ public class HelloApplication extends Application {
             textContainer.setAlignment(Pos.TOP_CENTER);
             textContainer.setPadding(new Insets(40, 0, 0, 0));
 
+            // New File button: opens the calendar naming dialog.
             Button leftOptionBtn = new Button("New File");
+            // Continue File button: opens the saved calendar list.
             Button rightOptionBtn = new Button("Continue File");
 
             leftOptionBtn.setPrefSize(140, 40);
@@ -260,12 +274,14 @@ public class HelloApplication extends Application {
             wrapperLayout.setTop(customHeader);
             wrapperLayout.setCenter(textContainer);
             wrapperLayout.setBottom(bottomButtonContainer);
+            // Window size: main menu starts at 600 by 400.
             Scene scene = new Scene(wrapperLayout, 600, 400);
             scene.setFill(Color.TRANSPARENT);
             mainStage.setScene(scene);
             mainStage.show();
         } catch (Exception e) { e.printStackTrace(); }
     }
+    // Section: New File dialog and its name, Cancel, and OK controls
     private void handleNewCalendarWindow(Stage ownerStage, boolean isDarkMode) {
         Stage dialogStage = new Stage();
         applyAppIcon(dialogStage);
@@ -275,16 +291,17 @@ public class HelloApplication extends Application {
         String bg = isDarkMode ? "#252526" : "#FAFAFA";
         String txtColor = isDarkMode ? "#FFFFFF" : "#111111";
         String inputBg = isDarkMode ? "#3E3E3F" : "#FFFFFF";
+        // Colors: theme-aware dialog, text, and input field palette.
         String inputBorder = isDarkMode ? "#555555" : "#CCCCCC";
-// 🌓 [UI 테두리선 패치] 새 파일 모달창에 반대 색상 테두리 적용
         String borderColor = isDarkMode ? "#FFFFFF" : "#000000";
         VBox layout = new VBox(20);
         layout.setPadding(new Insets(25));
         layout.setStyle("-fx-background-color: " + bg + "; -fx-background-radius: 15px; -fx-border-radius: 15px; "
-                + "-fx-border-color: " + borderColor + "; -fx-border-width: 1px;" // 반전 테두리선 추가
+                + "-fx-border-color: " + borderColor + "; -fx-border-width: 1px;"
                 + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 12, 0, 0, 0);");
         Label mainPrompt = new Label("Create a new work session name");
         mainPrompt.setStyle("-fx-text-fill: " + txtColor + "; -fx-font-size: 15px; -fx-font-weight: bold;");
+        // New File name field: sets the name of the saved calendar.
         TextField nameField = new TextField("UntitledCalendar");
         nameField.setPrefHeight(35);
         nameField.setStyle("-fx-background-color: " + inputBg + "; -fx-text-fill: " + txtColor + "; "
@@ -295,7 +312,9 @@ public class HelloApplication extends Application {
         nameField.setOnMouseExited(e -> {
             if (!nameField.isFocused()) nameField.setStyle(nameField.getStyle().replace("-fx-border-color: #FF9100;", "-fx-border-color: " + inputBorder + ";"));
         });
+        // Cancel button: closes the New File dialog without saving.
         Button cancelBtn = new Button("Cancel");
+        // OK button: creates and saves the new calendar.
         Button okBtn = new Button("OK");
         cancelBtn.setPrefSize(100, 35);
         okBtn.setPrefSize(100, 35);
@@ -321,8 +340,10 @@ public class HelloApplication extends Application {
         });
         cancelBtn.setOnAction(e -> dialogStage.close());
         okBtn.setOnAction(e -> {
-            String projectName = nameField.getText().trim();
-            if (!projectName.isEmpty()) {
+            String requestedName = nameField.getText().trim();
+            if (!requestedName.isEmpty()) {
+                String projectName = findAvailableProjectName(requestedName);
+                nameField.setText(projectName);
                 ProjectData newData = new ProjectData(projectName);
                 projectStorage.put(projectName, newData);
                 saveDataToDisk();
@@ -331,11 +352,61 @@ public class HelloApplication extends Application {
             }
         });
         nameField.setOnAction(e -> okBtn.getOnAction().handle(e));
+        // Window size: New File dialog starts at 380 by 220.
         Scene scene = new Scene(layout, 380, 220);
         scene.setFill(Color.TRANSPARENT);
         dialogStage.setScene(scene);
         dialogStage.showAndWait();
     }
+
+    // Section: Avoid duplicate saved calendar names
+    private String findAvailableProjectName(String requestedName) {
+        if (!projectNameExists(requestedName)) return requestedName;
+        int suffix = 1;
+        String candidate;
+        do {
+            candidate = requestedName + " (" + suffix++ + ")";
+        } while (projectNameExists(candidate));
+        return candidate;
+    }
+
+    // Section: Check saved calendar names against memory and disk
+    private boolean projectNameExists(String projectName) {
+        return projectStorage.containsKey(projectName)
+                || new File(STORAGE_DIR_PATH, projectName + ".xlsx").exists();
+    }
+
+    // Section: Format the month and year shown for a saved calendar
+    private String formatProjectPeriod(ProjectData projectData) {
+        LocalDate latestRecordDate = null;
+        if (projectData != null && projectData.dateRecords != null) {
+            for (String dateKey : projectData.dateRecords.keySet()) {
+                try {
+                    LocalDate date = LocalDate.parse(dateKey);
+                    if (latestRecordDate == null || date.isAfter(latestRecordDate)) latestRecordDate = date;
+                } catch (RuntimeException ignored) { }
+            }
+        }
+        YearMonth period = latestRecordDate == null ? currentYearMonth : YearMonth.from(latestRecordDate);
+        return java.time.format.DateTimeFormatter.ofPattern("MMM yy", Locale.ENGLISH).format(period);
+    }
+
+    // Section: Read the month and year from an Excel calendar
+    // Compatibility fix: recover the saved month and year from older workbook titles.
+    private YearMonth readWorkbookPeriod(org.apache.poi.ss.usermodel.Sheet sheet) {
+        try {
+            org.apache.poi.ss.usermodel.Row titleRow = sheet.getRow(0);
+            org.apache.poi.ss.usermodel.Cell titleCell = titleRow == null ? null : titleRow.getCell(0);
+            if (titleCell != null && titleCell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                java.util.regex.Matcher matcher = java.util.regex.Pattern
+                        .compile("\\((\\d{4}-\\d{2})\\)").matcher(titleCell.getStringCellValue());
+                if (matcher.find()) return YearMonth.parse(matcher.group(1));
+            }
+        } catch (RuntimeException ignored) { }
+        return currentYearMonth;
+    }
+
+    // Section: Continue File list and saved calendar selection
     private void handleContinueFileWindow(Stage ownerStage, boolean isDarkMode) {
         Stage selectionStage = new Stage();
         applyAppIcon(selectionStage);
@@ -344,23 +415,24 @@ public class HelloApplication extends Application {
         BorderPane layout = new BorderPane();
         String bg = isDarkMode ? "#222222" : "#F5F5F5";
         String txtColor = isDarkMode ? "white" : "black";
-// 🌓 [UI 테두리선 패치] 이어하기 파일 관리 창에 반대 색상 테두리 적용
+        // Colors: Continue File window uses matching theme contrast.
         String borderColor = isDarkMode ? "#FFFFFF" : "#000000";
         layout.setStyle("-fx-background-color: " + bg + "; -fx-background-radius: 15px; -fx-border-radius: 15px;"
-                + "-fx-border-color: " + borderColor + "; -fx-border-width: 1px;" // 반전 테두리선 추가
+                + "-fx-border-color: " + borderColor + "; -fx-border-width: 1px;"
                 + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
         Label titleLabel = new Label("Select File to Continue");
         titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: " + txtColor + ";");
-        // 🟢 기존의 중복된 3줄을 지우고, 이 코드로 깔끔하게 대체해 줍니다.
         ListView<String> projectListView = new ListView<>();
-        projectListView.getItems().clear(); // 이전 스캔 잔상을 깨끗이 청소
-        projectListView.getItems().addAll(projectStorage.keySet()); // 단 한 번만 깨끗하게 추가
-        // 🟢 projectListView 선언부에도 <String>이 있는지 확인하시고, Factory 시작점을 아래와 같이 고쳐줍니다.
+        projectListView.getItems().clear();
+        projectListView.getItems().addAll(projectStorage.keySet());
+        // Colors and fonts: style saved calendar names, period, totals, and selection state.
         projectListView.setCellFactory(lv -> new ListCell<String>() {
             private final Label mainPart = new Label();
+            private final Label periodPart = new Label();
+            private final Label timePart = new Label();
             private final Label slashPart = new Label(" / ");
             private final Label daysPart = new Label();
-            private final HBox rowContainer = new HBox(mainPart, slashPart, daysPart);
+            private final HBox rowContainer = new HBox(mainPart, periodPart, timePart, slashPart, daysPart);
             private final Region separatorLine = new Region();
             private final VBox totalCellLayout = new VBox(rowContainer, separatorLine);
 
@@ -374,7 +446,6 @@ public class HelloApplication extends Application {
                 VBox.setMargin(separatorLine, new Insets(2, 12, 0, 12));
             }
 
-            // 🎯 아래의 updateItem 메서드가 이제 부모의 String 타입을 정상 오버라이드하게 됩니다!
             @Override
             protected void updateItem(String pName, boolean empty) {
                 super.updateItem(pName, empty);
@@ -390,46 +461,46 @@ public class HelloApplication extends Application {
                             else if ("FROM_TO".equals(rec.type)) {
                                 int start = parseTimeStringToMinutes(rec.fromTime);
                                 int end = parseTimeStringToMinutes(rec.toTime);
-                                if (end >= start) totalMins += (end - start);
+                                if (end >= start) totalMins += netWorkMinutes(rec);
                             } else if ("TOTAL".equals(rec.type)) {
                                 totalMins += parseDurationStringToMinutes(rec.totalTime);
                             }
                         }
                     }
-                    // 🟢 기존의 3줄을 완벽하게 대체하는 '기록된 날짜 개수(Filled Dates)' 스케일러 엔진
                     int hours = totalMins / 60;
                     int mins = totalMins % 60;
 
                     int filledDaysCount = 0;
                     if (pData != null && pData.dateRecords != null) {
-                        // 출퇴근 데이터 장부(dateRecords)에 등록된 고유 날짜의 총 개수를 일수로 다이렉트 채택합니다.
                         filledDaysCount = pData.dateRecords.size();
                     }
 
-                    mainPart.setText(String.format("%s — %d Hrs %02d Mins", pName, hours, mins));
+                    String period = formatProjectPeriod(pData);
+                    mainPart.setText(pName);
+                    periodPart.setText(period);
+                    timePart.setText(String.format(" — %d Hrs %02d Mins", hours, mins));
 
-                    // 🎯 이제 하루에 10분을 기록했든 2시간 45분을 기록했든, 데이터가 채워진 날짜가 2일이라면 "2 Days"로 정직하게 출력됩니다!
                     daysPart.setText(String.format("%d Days", filledDaysCount));
 
-                    // 🎯 변수명을 filledDaysCount로 일치시켜 'cannot find symbol: variable days' 에러를 전면 파쇄합니다.
-                    mainPart.setText(String.format("%s — %d Hrs %02d Mins", pName, hours, mins));
                     daysPart.setText(String.format("%d Days", filledDaysCount));
                     mainPart.setFont(Font.font("System", FontWeight.BOLD, 13));
+                    periodPart.setFont(Font.font("System", FontWeight.BOLD, 13));
+                    timePart.setFont(Font.font("System", FontWeight.BOLD, 13));
                     slashPart.setFont(Font.font("System", FontWeight.NORMAL, 13));
                     daysPart.setFont(Font.font("System", FontWeight.BOLD, 13));
                     if (isSelected()) {
                         separatorLine.setVisible(false);
                         if (isDarkMode) {
                             rowContainer.setStyle("-fx-background-color: #1A1A1A; -fx-background-radius: 4px; -fx-border-color: #FF9100; -fx-border-width: 1px; -fx-border-radius: 4px;");
-                            mainPart.setStyle("-fx-text-fill: #E0E0E0;"); slashPart.setStyle("-fx-text-fill: #666666;"); daysPart.setStyle("-fx-text-fill: #B0BEC5;");
+                            mainPart.setStyle("-fx-text-fill: #E0E0E0;"); periodPart.setStyle("-fx-text-fill: #00E5FF;"); timePart.setStyle("-fx-text-fill: #E0E0E0;"); slashPart.setStyle("-fx-text-fill: #666666;"); daysPart.setStyle("-fx-text-fill: #B0BEC5;");
                         } else {
                             rowContainer.setStyle("-fx-background-color: #F0F0F0; -fx-background-radius: 4px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.18), 6, 0, 0, 2);");
-                            mainPart.setStyle("-fx-text-fill: #222222;"); slashPart.setStyle("-fx-text-fill: #888888;"); daysPart.setStyle("-fx-text-fill: #000000;");
+                            mainPart.setStyle("-fx-text-fill: #222222;"); periodPart.setStyle("-fx-text-fill: #00838F;"); timePart.setStyle("-fx-text-fill: #222222;"); slashPart.setStyle("-fx-text-fill: #888888;"); daysPart.setStyle("-fx-text-fill: #000000;");
                         }
                     } else {
                         separatorLine.setVisible(true);
                         rowContainer.setStyle("-fx-background-color: transparent; -fx-border-color: transparent; -fx-effect: null;");
-                        mainPart.setStyle("-fx-text-fill: #FF9100;"); slashPart.setStyle("-fx-text-fill: #888888;"); daysPart.setStyle("-fx-text-fill: #00E5FF;");
+                        mainPart.setStyle("-fx-text-fill: #FF9100;"); periodPart.setStyle("-fx-text-fill: " + (isDarkMode ? "#00E5FF" : "#00838F") + ";"); timePart.setStyle("-fx-text-fill: #FF9100;"); slashPart.setStyle("-fx-text-fill: #888888;"); daysPart.setStyle("-fx-text-fill: #00E5FF;");
                     }
                     setStyle("-fx-background-color: transparent !important; -fx-padding: 0px !important;");
                     setGraphic(totalCellLayout);
@@ -441,11 +512,11 @@ public class HelloApplication extends Application {
         if(projectListView.getItems().isEmpty()) {
             projectListView.setPlaceholder(new Label("No projects found."));
         }
+        // Open Calendar button: opens the selected saved calendar.
         Button openBtn = new Button("Open Calendar");
         openBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
         openBtn.setDisable(true);
 
-        // 🎯 제네릭이 온전하게 맵핑되어 이제 newVal이 String으로 안전하게 파싱됩니다.
         projectListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) openBtn.setDisable(false);
         });
@@ -457,9 +528,11 @@ public class HelloApplication extends Application {
                 openCalendarWindow(ownerStage, isDarkMode, data);
             }
         });
+        // Cancel button: closes the saved calendar list.
         Button cancelBtn = new Button("Cancel");
         cancelBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: " + txtColor + "; -fx-cursor: hand;");
         cancelBtn.setOnAction(e -> selectionStage.close());
+        // Delete Calendar button: removes the selected saved calendar.
         Button deleteBtn = new Button("Clear Record");
         deleteBtn.setStyle("-fx-background-color: #757575; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
         deleteBtn.setOnAction(e -> {
@@ -503,6 +576,7 @@ public class HelloApplication extends Application {
         selectionStage.setScene(scene);
         selectionStage.show();
     }
+    // Section: Monthly calendar, month navigation, and work summaries
     private void openCalendarWindow(Stage ownerStage, boolean isDarkMode, ProjectData projectData) {
         Stage calStage = new Stage();
         applyAppIcon(calStage);
@@ -511,13 +585,13 @@ public class HelloApplication extends Application {
         BorderPane mainLayout = new BorderPane();
         String panelBg = isDarkMode ? "#252526" : "#FAFAFA";
         String txtColor = isDarkMode ? "#FFFFFF" : "#111111";
+        // Colors: theme-aware calendar controls and text.
         String comboStyle = isDarkMode
                 ? "-fx-background-color: #3E3E3F; -fx-control-inner-background: #3E3E3F; -fx-text-fill: white; -fx-prompt-text-fill: white; -fx-mark-color: white; -fx-text-base-color: white;"
                 : "-fx-background-color: #EAEAEA; -fx-control-inner-background: #FFFFFF; -fx-text-fill: black; -fx-prompt-text-fill: black; -fx-mark-color: black; -fx-text-base-color: black;";
-// 🌓 [UI 테두리선 패치] 작업 달력 대시보드 화면에 반대 색상 테두리 적용
         String borderColor = isDarkMode ? "#FFFFFF" : "#000000";
         mainLayout.setStyle("-fx-background-color: " + panelBg + "; -fx-background-radius: 15px; -fx-border-radius: 15px;"
-                + "-fx-border-color: " + borderColor + "; -fx-border-width: 1px;" // 반전 테두리선 추가
+                + "-fx-border-color: " + borderColor + "; -fx-border-width: 1px;"
                 + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 12, 0, 0, 0);");
         calStage.setTitle("Work Calc Calendar - " + projectData.projectName);
         Label headerTitle = new Label("Work Calc Calendar — [" + projectData.projectName + "]");
@@ -538,7 +612,8 @@ public class HelloApplication extends Application {
             calStage.setY(e.getScreenY() - yOffset);
         });
         ComboBox yearChooser = new ComboBox<>();
-        for (int y = 2020; y <= 2035; y++) yearChooser.getItems().add(y);
+        int currentYear = YearMonth.now().getYear();
+        for (int y = currentYear - 1000; y <= currentYear + 1000; y++) yearChooser.getItems().add(y);
         yearChooser.setValue(currentYearMonth.getYear());
         yearChooser.setStyle(comboStyle);
         ComboBox monthChooser = new ComboBox<>();
@@ -569,7 +644,7 @@ public class HelloApplication extends Application {
                         } else if ("FROM_TO".equals(rec.type)) {
                             int start = parseTimeStringToMinutes(rec.fromTime);
                             int end = parseTimeStringToMinutes(rec.toTime);
-                            if (end >= start) totalMinutes += (end - start);
+                            if (end >= start) totalMinutes += netWorkMinutes(rec);
                         } else if ("TOTAL".equals(rec.type)) {
                             totalMinutes += parseDurationStringToMinutes(rec.totalTime);
                         }
@@ -649,20 +724,21 @@ public class HelloApplication extends Application {
         mainLayout.setTop(topHeaderBar);
         mainLayout.setCenter(centerArea);
         mainLayout.setBottom(footerDashboard);
+        // Window size: monthly calendar starts at 450 by 520.
         Scene scene = new Scene(mainLayout, 450, 520);
         scene.setFill(Color.TRANSPARENT);
         calStage.setScene(scene);
         calStage.show();
     }
+    // Section: Daily time logger, time entry, breaks, and save controls
     private void openTimeFeatureDialog(Stage parentStage, boolean isDarkMode, String dateKey, ProjectData projectData, Runnable onSaveSuccess) {
-        // 🟢 1. OS 순정 타이틀바를 완전히 삭제하여 투명한 커스텀 도화지 레이어로 만듭니다.
         Stage dialogStage = new Stage();
         applyAppIcon(dialogStage);
         dialogStage.initStyle(StageStyle.TRANSPARENT);
         dialogStage.initOwner(parentStage);
         dialogStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
 
-        // 🌓 [UI 테두리선 패치] 다크/라이트 테마 반전 색상 아웃라인을 정밀 계산 주입합니다.
+        // Colors: time logger panel and controls follow the active theme.
         String borderColor = isDarkMode ? "#FFFFFF" : "#000000";
         String panelBg = isDarkMode ? "#2D2D2D" : "#FFFFFF";
         String txtColor = isDarkMode ? "white" : "black";
@@ -671,17 +747,16 @@ public class HelloApplication extends Application {
         VBox layout = new VBox(15);
         layout.setPadding(new Insets(20));
 
-        // 🎨 메인 홈화면들과 완전히 똑같은 모서리 라운딩(15px) 및 반전 색상 고대비 아웃라인 결합
         layout.setStyle("-fx-background-color: " + panelBg + ";"
                 + " -fx-background-radius: 15px; -fx-border-radius: 15px;"
                 + " -fx-border-color: " + borderColor + "; -fx-border-width: 1px;"
                 + " -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
 
-        // ❌ [닫기 버튼 글꼴 픽스] 특수문자 깨짐을 원천 봉쇄하는 시그니처 대문자 'X' 헤더를 빌드합니다.
         Button closeBtn = new Button("X");
         closeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: " + txtColor + "; -fx-font-size: 13px; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-family: 'Arial';");
         closeBtn.setOnAction(e -> dialogStage.close());
 
+        // Fonts: emphasize the selected date in the logger header.
         Label headerTitle = new Label("Time Logger [" + dateKey + "]");
         headerTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: " + txtColor + "; -fx-font-size: 14px;");
 
@@ -690,7 +765,6 @@ public class HelloApplication extends Application {
         dialogHeaderBar.setRight(closeBtn);
         dialogHeaderBar.setPadding(new Insets(0, 0, 10, 0));
 
-        // 🖱️ 커스텀 타이틀바 영역을 마우스로 붙잡고 윈도우 화면 어디든 이동할 수 있는 드래그 센서 연동
         dialogHeaderBar.setOnMousePressed(e -> {
             xOffset = e.getSceneX();
             yOffset = e.getSceneY();
@@ -704,8 +778,11 @@ public class HelloApplication extends Application {
         mainPrompt.setStyle("-fx-text-fill: " + txtColor + "; -fx-font-weight: bold;");
 
         ToggleGroup featureGroup = new ToggleGroup();
+        // Work period option: records a start and end time with optional breaks.
         RadioButton rbFromTo = new RadioButton("From Time to This Time");
+        // Total Time option: records a manually entered duration.
         RadioButton rbTotal = new RadioButton("Total Time");
+        // Checked option: records the standard eight-hour workday.
         RadioButton rbChecked = new RadioButton("Checked (8 Hours)");
         rbFromTo.setToggleGroup(featureGroup); rbTotal.setToggleGroup(featureGroup); rbChecked.setToggleGroup(featureGroup);
 
@@ -722,6 +799,43 @@ public class HelloApplication extends Application {
 
         ComboBox<String> cbFrom = new ComboBox<>(); cbFrom.getItems().addAll(amPmList); cbFrom.setValue("09:00 AM");
         ComboBox<String> cbTo = new ComboBox<>(); cbTo.getItems().addAll(amPmList); cbTo.setValue("06:00 PM");
+        TextField tfFrom = new TextField("09:00 AM"); tfFrom.setPromptText("hh:mm AM/PM");
+        TextField tfTo = new TextField("06:00 PM"); tfTo.setPromptText("hh:mm AM/PM");
+        installTimeNormalization(tfFrom); installTimeNormalization(tfTo);
+        ToggleGroup timeInputGroup = new ToggleGroup();
+        // Time selection controls: choose a dropdown or type times directly.
+        RadioButton rbSelectTime = new RadioButton("Select from list");
+        RadioButton rbTypeTime = new RadioButton("Type times");
+        rbSelectTime.setToggleGroup(timeInputGroup); rbTypeTime.setToggleGroup(timeInputGroup); rbSelectTime.setSelected(true);
+        rbSelectTime.setStyle(radioStyle); rbTypeTime.setStyle(radioStyle);
+        HBox timeInputMode = new HBox(15, rbSelectTime, rbTypeTime);
+        HBox typedFromTo = new HBox(8, new Label("From:"), tfFrom, new Label("To:"), tfTo);
+        ComboBox<String>[] breakFrom = new ComboBox[3];
+        ComboBox<String>[] breakTo = new ComboBox[3];
+        TextField[] typedBreakFrom = new TextField[3];
+        TextField[] typedBreakTo = new TextField[3];
+        VBox breakRows = new VBox(6);
+        List<String> optionalAmPmList = new ArrayList<>(); optionalAmPmList.add(""); optionalAmPmList.addAll(amPmList);
+        // Break time fields: provide up to three breaks within the work period.
+        for (int i = 0; i < 3; i++) {
+            breakFrom[i] = new ComboBox<>(); breakFrom[i].getItems().addAll(optionalAmPmList); breakFrom[i].setValue("");
+            breakTo[i] = new ComboBox<>(); breakTo[i].getItems().addAll(optionalAmPmList); breakTo[i].setValue("");
+            breakFrom[i].setPrefWidth(105); breakTo[i].setPrefWidth(105);
+            typedBreakFrom[i] = new TextField(); typedBreakFrom[i].setPromptText("hh:mm AM/PM");
+            typedBreakTo[i] = new TextField(); typedBreakTo[i].setPromptText("hh:mm AM/PM");
+            installTimeNormalization(typedBreakFrom[i]); installTimeNormalization(typedBreakTo[i]);
+            Label breakLabel = new Label("Break time " + (i + 1) + ":");
+            breakLabel.setStyle("-fx-text-fill: " + txtColor + "; -fx-font-weight: bold;");
+            Label typedBreakLabel = new Label("Break time " + (i + 1) + ":");
+            typedBreakLabel.setStyle("-fx-text-fill: " + txtColor + "; -fx-font-weight: bold;");
+            Label selectToLabel = new Label("To:"); selectToLabel.setStyle("-fx-text-fill: " + txtColor + "; -fx-font-weight: bold;");
+            Label typeToLabel = new Label("To:"); typeToLabel.setStyle("-fx-text-fill: " + txtColor + "; -fx-font-weight: bold;");
+            HBox selectRow = new HBox(8, breakLabel, breakFrom[i], selectToLabel, breakTo[i]);
+            HBox typeRow = new HBox(8, typedBreakLabel, typedBreakFrom[i], typeToLabel, typedBreakTo[i]);
+            selectRow.visibleProperty().bind(rbSelectTime.selectedProperty()); selectRow.managedProperty().bind(selectRow.visibleProperty());
+            typeRow.visibleProperty().bind(rbTypeTime.selectedProperty()); typeRow.managedProperty().bind(typeRow.visibleProperty());
+            breakRows.getChildren().addAll(selectRow, typeRow);
+        }
 
         List<String> durationList = new ArrayList<>();
         for (int h = 0; h <= 24; h++) {
@@ -730,12 +844,10 @@ public class HelloApplication extends Application {
                 durationList.add(String.format("%02d:%02d", h, m)); if (h == 24) break;
             }
         }
-        // 🟢 기존 구역을 완벽하게 대체하는 '고대비 고가시성 콤보박스' 렌더링 엔진
         ComboBox<String> cbTotalDuration = new ComboBox<>();
         cbTotalDuration.getItems().addAll(durationList);
         cbTotalDuration.setValue("08:00");
 
-        // 🎨 [가독성 버그 완전 해결] 화살표 색상(-fx-mark-color)과 글자색(-fx-text-base-color)을 완벽하게 반전시킵니다.
         String comboStyle = isDarkMode
                 ? "-fx-background-color: #3E3E3F; -fx-text-fill: white; -fx-control-inner-background: #3E3E3F; -fx-text-base-color: white; -fx-mark-color: white;"
                 : "-fx-background-color: #EAEAEA; -fx-text-fill: black; -fx-control-inner-background: #FFFFFF; -fx-text-base-color: black; -fx-mark-color: black;";
@@ -743,30 +855,53 @@ public class HelloApplication extends Application {
         cbFrom.setStyle(comboStyle);
         cbTo.setStyle(comboStyle);
         cbTotalDuration.setStyle(comboStyle);
+        for (int i = 0; i < 3; i++) { breakFrom[i].setStyle(comboStyle); breakTo[i].setStyle(comboStyle); }
+        for (TextField field : new TextField[]{tfFrom, tfTo}) field.setStyle(comboStyle);
+        for (int i = 0; i < 3; i++) { typedBreakFrom[i].setStyle(comboStyle); typedBreakTo[i].setStyle(comboStyle); }
 
-        // 🎨 [다크모드 가독성 패치] 묻혀있던 가이드 글자들을 선명한 흰색/밝은회색 계열로 변환합니다.
         Label lblFrom = new Label("From:"); lblFrom.setStyle("-fx-text-fill: #E0E0E0; -fx-font-weight: bold;");
         Label lblTo = new Label("To:"); lblTo.setStyle("-fx-text-fill: #E0E0E0; -fx-font-weight: bold;");
         Label lblDuration = new Label("Duration:"); lblDuration.setStyle("-fx-text-fill: #E0E0E0; -fx-font-weight: bold;");
 
-        // 고가시성 라벨 객체들을 정밀 조립 바인딩합니다.
         HBox hboxFromTo = new HBox(8, lblFrom, cbFrom, lblTo, cbTo);
+        typedFromTo.getChildren().get(0).setStyle("-fx-text-fill: " + txtColor + "; -fx-font-weight: bold;");
+        typedFromTo.getChildren().get(2).setStyle("-fx-text-fill: " + txtColor + "; -fx-font-weight: bold;");
+        hboxFromTo.visibleProperty().bind(rbSelectTime.selectedProperty()); hboxFromTo.managedProperty().bind(hboxFromTo.visibleProperty());
+        typedFromTo.visibleProperty().bind(rbTypeTime.selectedProperty()); typedFromTo.managedProperty().bind(typedFromTo.visibleProperty());
         HBox hboxTotal = new HBox(8, lblDuration, cbTotalDuration);
 
-        // 🎯 [투명도 밸런스 패치] 선택되지 않아 비활성화(Disable) 상태일 때 글자가 아예 증발하지 않고 은은하게 회색으로 보이도록 조율합니다.
         hboxFromTo.disableProperty().addListener((obs, oldV, newV) -> hboxFromTo.setOpacity(newV ? 0.35 : 1.0));
         hboxTotal.disableProperty().addListener((obs, oldV, newV) -> hboxTotal.setOpacity(newV ? 0.35 : 1.0));
 
         hboxFromTo.disableProperty().bind(rbFromTo.selectedProperty().not());
+        timeInputMode.disableProperty().bind(rbFromTo.selectedProperty().not());
+        typedFromTo.disableProperty().bind(rbFromTo.selectedProperty().not());
+        breakRows.disableProperty().bind(rbFromTo.selectedProperty().not());
+        breakRows.disableProperty().addListener((obs, oldV, newV) -> breakRows.setOpacity(newV ? 0.35 : 1.0));
         hboxTotal.disableProperty().bind(rbTotal.selectedProperty().not());
 
         TimeRecord existing = projectData.dateRecords.get(dateKey);
         if (existing != null) {
-            if ("FROM_TO".equals(existing.type)) { rbFromTo.setSelected(true); cbFrom.setValue(existing.fromTime); cbTo.setValue(existing.toTime); }
+            if ("FROM_TO".equals(existing.type)) {
+                rbFromTo.setSelected(true); cbFrom.setValue(existing.fromTime); cbTo.setValue(existing.toTime);
+                for (int i = 0; i < 3; i++) {
+                    if (existing.breakFromTimes != null && i < existing.breakFromTimes.length) {
+                        typedBreakFrom[i].setText(existing.breakFromTimes[i]);
+                        if (optionalAmPmList.contains(existing.breakFromTimes[i])) breakFrom[i].setValue(existing.breakFromTimes[i]);
+                    }
+                    if (existing.breakToTimes != null && i < existing.breakToTimes.length) {
+                        typedBreakTo[i].setText(existing.breakToTimes[i]);
+                        if (optionalAmPmList.contains(existing.breakToTimes[i])) breakTo[i].setValue(existing.breakToTimes[i]);
+                    }
+                }
+                tfFrom.setText(existing.fromTime); tfTo.setText(existing.toTime);
+                if (!amPmList.contains(existing.fromTime) || !amPmList.contains(existing.toTime)) rbTypeTime.setSelected(true);
+            }
             else if ("TOTAL".equals(existing.type)) { rbTotal.setSelected(true); cbTotalDuration.setValue(existing.totalTime); }
             else if ("CHECKED".equals(existing.type)) rbChecked.setSelected(true);
         } else rbFromTo.setSelected(true);
 
+        // Clear Record button: removes the selected day entry.
         Button deleteBtn = new Button("Clear Record"); deleteBtn.setStyle("-fx-background-color: #757575; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
         deleteBtn.setOnAction(e -> {
             projectData.dateRecords.remove(dateKey);
@@ -778,10 +913,52 @@ public class HelloApplication extends Application {
             onSaveSuccess.run(); dialogStage.close();
         });
 
+        // Save Record button: stores the selected day entry.
         Button saveBtn = new Button("Save Record"); saveBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
         saveBtn.setOnAction(e -> {
             TimeRecord record = new TimeRecord();
-            if (rbFromTo.isSelected()) { record.type = "FROM_TO"; record.fromTime = cbFrom.getValue(); record.toTime = cbTo.getValue(); }
+            if (rbFromTo.isSelected()) {
+                boolean typing = rbTypeTime.isSelected();
+                record.type = "FROM_TO";
+                record.fromTime = typing ? normalizeTimeInput(tfFrom.getText()) : cbFrom.getValue();
+                record.toTime = typing ? normalizeTimeInput(tfTo.getText()) : cbTo.getValue();
+                // Error handling: validate the work period before saving the record.
+        if (!isValidTimeString(record.fromTime) || !isValidTimeString(record.toTime)) {
+                    new Alert(Alert.AlertType.ERROR, "Enter the work times in hh:mm AM/PM format, for example 09:00 AM.").showAndWait(); return;
+                }
+                int workStart = parseTimeStringToMinutes(record.fromTime);
+                int workEnd = parseTimeStringToMinutes(record.toTime);
+                if (workEnd <= workStart) {
+                    new Alert(Alert.AlertType.ERROR, "The end of the work period must be later than its start.").showAndWait(); return;
+                }
+                for (int i = 0; i < 3; i++) {
+                    record.breakFromTimes[i] = typing ? normalizeTimeInput(typedBreakFrom[i].getText()) : breakFrom[i].getValue();
+                    record.breakToTimes[i] = typing ? normalizeTimeInput(typedBreakTo[i].getText()) : breakTo[i].getValue();
+                    String breakFromInput = typing ? typedBreakFrom[i].getText().trim() : record.breakFromTimes[i];
+                    String breakToInput = typing ? typedBreakTo[i].getText().trim() : record.breakToTimes[i];
+                    boolean hasStart = !breakFromInput.isBlank(), hasEnd = !breakToInput.isBlank();
+                    if (hasStart != hasEnd || (hasStart && (!isValidTimeString(record.breakFromTimes[i]) || !isValidTimeString(record.breakToTimes[i])))) {
+                        new Alert(Alert.AlertType.ERROR, "Enter both times for each break in hh:mm AM/PM format, or leave both empty.").showAndWait(); return;
+                    }
+                    if (hasStart) {
+                        int breakStart = parseTimeStringToMinutes(record.breakFromTimes[i]);
+                        int breakEnd = parseTimeStringToMinutes(record.breakToTimes[i]);
+                        if (breakStart < workStart || breakEnd > workEnd || breakEnd <= breakStart) {
+                            new Alert(Alert.AlertType.ERROR, "Each break must start and end within the work period.").showAndWait(); return;
+                        }
+                        for (int previous = 0; previous < i; previous++) {
+                            String previousFrom = record.breakFromTimes[previous], previousTo = record.breakToTimes[previous];
+                            if (previousFrom != null && !previousFrom.isBlank() && previousTo != null && !previousTo.isBlank()) {
+                                int previousStart = parseTimeStringToMinutes(previousFrom);
+                                int previousEnd = parseTimeStringToMinutes(previousTo);
+                                if (breakStart < previousEnd && previousStart < breakEnd) {
+                                    new Alert(Alert.AlertType.ERROR, "Break times cannot overlap.").showAndWait(); return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             else if (rbTotal.isSelected()) { record.type = "TOTAL"; record.totalTime = cbTotalDuration.getValue(); }
             else if (rbChecked.isSelected()) { record.type = "CHECKED"; record.isChecked = true; }
             projectData.dateRecords.put(dateKey, record); saveDataToDisk(); onSaveSuccess.run(); dialogStage.close();
@@ -789,15 +966,14 @@ public class HelloApplication extends Application {
 
         HBox btnContainer = new HBox(15, deleteBtn, saveBtn); btnContainer.setAlignment(Pos.CENTER);
 
-        // 🟢 2. 가상 헤더와 컨트롤 컴포넌트들을 차례대로 주입 조립합니다.
-        layout.getChildren().addAll(dialogHeaderBar, mainPrompt, rbFromTo, hboxFromTo, rbTotal, hboxTotal, rbChecked, btnContainer);
+        layout.getChildren().addAll(dialogHeaderBar, mainPrompt, rbFromTo, timeInputMode, hboxFromTo, typedFromTo, breakRows, rbTotal, hboxTotal, rbChecked, btnContainer);
 
-        Scene scene = new Scene(layout, 380, 420);
-        // 외곽의 하얀색 네모 상자 파편을 날려버리는 배경 알파 채널 투명화 투하
+        Scene scene = new Scene(layout, 440, 650);
         scene.setFill(Color.TRANSPARENT);
         dialogStage.setScene(scene);
         dialogStage.show();
     }
+    // Section: Parse and validate time input
     private int parseTimeStringToMinutes(String timeStr) {
         try {
             if (timeStr == null || !timeStr.contains(":") || !timeStr.contains(" ")) return 0;
@@ -812,6 +988,7 @@ public class HelloApplication extends Application {
             return (hour * 60) + min;
         } catch (Exception e) { return 0; }
     }
+    // Section: Parse recorded work durations
     private int parseDurationStringToMinutes(String durationStr) {
         try {
             if (durationStr == null || !durationStr.contains(":")) return 0;
@@ -821,6 +998,60 @@ public class HelloApplication extends Application {
             return (hour * 60) + min;
         } catch (Exception e) { return 0; }
     }
+
+    // Section: Normalize typed times into a consistent display format
+    private String normalizeTimeInput(String input) {
+        if (input == null) return null;
+        if (input.isBlank()) return "";
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("(?i)^\\s*(\\d{1,2}):?(\\d{2})\\s*(AM|PM)\\s*$")
+                .matcher(input);
+        // Error handling: reject inputs that do not match supported time formats.
+        if (!matcher.matches()) return null;
+        int hour = Integer.parseInt(matcher.group(1));
+        int minute = Integer.parseInt(matcher.group(2));
+        if (hour < 1 || hour > 12 || minute > 59) return null;
+        return String.format(Locale.ROOT, "%02d:%02d %s", hour, minute, matcher.group(3).toUpperCase(Locale.ROOT));
+    }
+
+    // Section: Apply automatic time formatting to a text field
+    private void installTimeNormalization(TextField field) {
+        Runnable normalize = () -> {
+            String normalized = normalizeTimeInput(field.getText());
+            if (normalized != null) field.setText(normalized);
+        };
+        field.setOnAction(event -> normalize.run());
+        field.focusedProperty().addListener((observable, wasFocused, isFocused) -> {
+            if (!isFocused) normalize.run();
+        });
+    }
+
+    // Section: Check whether a time value is valid
+    private boolean isValidTimeString(String timeStr) {
+        String normalized = normalizeTimeInput(timeStr);
+        return normalized != null && !normalized.isEmpty();
+    }
+
+    // Section: Calculate work minutes after subtracting breaks
+    // Fix: subtract only break minutes that overlap the recorded work period.
+    private int netWorkMinutes(TimeRecord record) {
+        int start = parseTimeStringToMinutes(record.fromTime);
+        int end = parseTimeStringToMinutes(record.toTime);
+        int total = Math.max(0, end - start);
+        if (record.breakFromTimes != null && record.breakToTimes != null) {
+            for (int i = 0; i < Math.min(record.breakFromTimes.length, record.breakToTimes.length); i++) {
+                String from = record.breakFromTimes[i], to = record.breakToTimes[i];
+                if (from != null && to != null && !from.isBlank() && !to.isBlank()) {
+                    int breakStart = parseTimeStringToMinutes(from), breakEnd = parseTimeStringToMinutes(to);
+                    int overlapStart = Math.max(start, breakStart);
+                    int overlapEnd = Math.min(end, breakEnd);
+                    if (overlapEnd > overlapStart) total -= (overlapEnd - overlapStart);
+                }
+            }
+        }
+        return Math.max(0, total);
+    }
+    // Section: Save calendars to Excel workbooks
     private void saveDataToDisk() {
         for (Map.Entry<String, ProjectData> entry : projectStorage.entrySet()) {
             String projectName = entry.getKey();
@@ -828,11 +1059,20 @@ public class HelloApplication extends Application {
             File file = new File(STORAGE_DIR_PATH + File.separator + projectName + ".xlsx");
             try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
                 org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet(currentYearMonth.getMonth().name());
+                org.apache.poi.ss.usermodel.Sheet detailsSheet = workbook.createSheet("Time Details");
+                // Window size and print layout: fit the calendar to one A4 landscape page.
                 sheet.setFitToPage(true);
                 org.apache.poi.ss.usermodel.PrintSetup printSetup = sheet.getPrintSetup();
                 printSetup.setFitWidth((short) 1);
                 printSetup.setFitHeight((short) 1);
                 printSetup.setPaperSize(org.apache.poi.ss.usermodel.PrintSetup.A4_PAPERSIZE);
+                printSetup.setLandscape(true);
+                sheet.setAutobreaks(true);
+                sheet.setHorizontallyCenter(true);
+                sheet.setMargin(org.apache.poi.ss.usermodel.Sheet.LeftMargin, 0.25);
+                sheet.setMargin(org.apache.poi.ss.usermodel.Sheet.RightMargin, 0.25);
+                sheet.setMargin(org.apache.poi.ss.usermodel.Sheet.TopMargin, 0.30);
+                sheet.setMargin(org.apache.poi.ss.usermodel.Sheet.BottomMargin, 0.30);
                 org.apache.poi.ss.usermodel.Font mainTitleFont = workbook.createFont();
                 mainTitleFont.setBold(true);
                 mainTitleFont.setFontHeightInPoints((short) 16);
@@ -852,7 +1092,31 @@ public class HelloApplication extends Application {
                 cellStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.LEFT);
                 cellStyle.setVerticalAlignment(org.apache.poi.ss.usermodel.VerticalAlignment.TOP);
                 cellStyle.setWrapText(true);
+                org.apache.poi.ss.usermodel.Font calendarFont = workbook.createFont();
+                calendarFont.setFontHeightInPoints((short) 9);
+                cellStyle.setFont(calendarFont);
                 setBorder(cellStyle);
+                org.apache.poi.ss.usermodel.Font sundayDayFont = workbook.createFont();
+                sundayDayFont.setBold(true);
+                sundayDayFont.setFontHeightInPoints((short) 9);
+                sundayDayFont.setColor(org.apache.poi.ss.usermodel.IndexedColors.RED.getIndex());
+                org.apache.poi.ss.usermodel.Font saturdayDayFont = workbook.createFont();
+                saturdayDayFont.setBold(true);
+                saturdayDayFont.setFontHeightInPoints((short) 9);
+                saturdayDayFont.setColor(org.apache.poi.ss.usermodel.IndexedColors.BLUE.getIndex());
+                org.apache.poi.ss.usermodel.Font weekdayDayFont = workbook.createFont();
+                weekdayDayFont.setBold(true);
+                weekdayDayFont.setFontHeightInPoints((short) 9);
+                weekdayDayFont.setColor(org.apache.poi.ss.usermodel.IndexedColors.BLACK.getIndex());
+                org.apache.poi.ss.usermodel.Font boldLabelFont = workbook.createFont();
+                boldLabelFont.setBold(true);
+                boldLabelFont.setFontHeightInPoints((short) 9);
+                boldLabelFont.setColor(org.apache.poi.ss.usermodel.IndexedColors.BLACK.getIndex());
+                org.apache.poi.ss.usermodel.CellStyle detailCellStyle = workbook.createCellStyle();
+                detailCellStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.CENTER);
+                detailCellStyle.setVerticalAlignment(org.apache.poi.ss.usermodel.VerticalAlignment.CENTER);
+                detailCellStyle.setWrapText(true);
+                setBorder(detailCellStyle);
                 org.apache.poi.ss.usermodel.Font footerFont = workbook.createFont();
                 footerFont.setBold(true);
                 org.apache.poi.ss.usermodel.CellStyle footerStyle = workbook.createCellStyle();
@@ -860,6 +1124,32 @@ public class HelloApplication extends Application {
                 footerStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.GREY_25_PERCENT.getIndex());
                 footerStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
                 setBorder(footerStyle);
+
+                org.apache.poi.ss.usermodel.Row detailTitleRow = detailsSheet.createRow(0);
+                detailTitleRow.setHeightInPoints(30);
+                org.apache.poi.ss.usermodel.Cell detailTitle = detailTitleRow.createCell(0);
+                detailTitle.setCellValue("Time Details — All Dates");
+                detailTitle.setCellStyle(titleStyle);
+                detailsSheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 6));
+                org.apache.poi.ss.usermodel.Row detailHeaderRow = detailsSheet.createRow(1);
+                detailHeaderRow.setHeightInPoints(25);
+                String[] detailHeaders = {"Date", "Entry type", "Work period", "Break 1", "Break 2", "Break 3", "Worked"};
+                for (int i = 0; i < detailHeaders.length; i++) {
+                    org.apache.poi.ss.usermodel.Cell header = detailHeaderRow.createCell(i);
+                    header.setCellValue(detailHeaders[i]);
+                    header.setCellStyle(headerStyle);
+                }
+                detailsSheet.createFreezePane(0, 2);
+                detailsSheet.setFitToPage(true);
+                detailsSheet.getPrintSetup().setLandscape(true);
+                detailsSheet.getPrintSetup().setPaperSize(org.apache.poi.ss.usermodel.PrintSetup.A4_PAPERSIZE);
+                detailsSheet.getPrintSetup().setFitWidth((short) 1);
+                detailsSheet.getPrintSetup().setFitHeight((short) 0);
+                detailsSheet.setRepeatingRows(new org.apache.poi.ss.util.CellRangeAddress(1, 1, 0, 6));
+                int detailRowIndex = 2;
+                int[] detailColumnWidths = {3800, 4200, 5600, 5200, 5200, 5200, 3800};
+                for (int i = 0; i < detailColumnWidths.length; i++) detailsSheet.setColumnWidth(i, detailColumnWidths[i]);
+
                 org.apache.poi.ss.usermodel.Row titleRow = sheet.createRow(0);
                 titleRow.setHeightInPoints(35);
                 org.apache.poi.ss.usermodel.Cell titleCell = titleRow.createCell(0);
@@ -886,43 +1176,94 @@ public class HelloApplication extends Application {
                 }
                 int totalMinutes = 0;
                 int totalDays = 0;
+                int maxLinesInWeek = 1;
                 int col = startColumn;
                 for (int day = 1; day <= daysInMonth; day++) {
                     String dKey = currentYearMonth.atDay(day).toString();
                     org.apache.poi.ss.usermodel.Cell dateCell = currentExcelRow.createCell(col);
-                    String cellContent = " Day " + day + "\n";
+                    String cellContent = "Day " + day;
                     if (pData.dateRecords.containsKey(dKey)) {
                         TimeRecord rec = pData.dateRecords.get(dKey);
                         if (rec != null) {
                             totalDays++;
                             if ("CHECKED".equals(rec.type)) {
                                 totalMinutes += (8 * 60);
-                                cellContent += " [✔ 08:00]";
+                                cellContent += " | Net 8h 00m";
                             } else if ("FROM_TO".equals(rec.type)) {
                                 int start = parseTimeStringToMinutes(rec.fromTime);
                                 int end = parseTimeStringToMinutes(rec.toTime);
-                                if (end >= start) totalMinutes += (end - start);
-                                cellContent += " [" + rec.fromTime + "~" + rec.toTime + "]";
+                                int workedMinutes = end >= start ? netWorkMinutes(rec) : 0;
+                                totalMinutes += workedMinutes;
+                                cellContent = "Day " + day + " | Net " + formatWorkedTimeReadable(workedMinutes)
+                                        + "\nShift " + formatCompactTimeRange(rec.fromTime, rec.toTime, false);
+                                List<String> compactBreaks = new ArrayList<>();
+                                if (rec.breakFromTimes != null && rec.breakToTimes != null) {
+                                    for (int i = 0; i < Math.min(rec.breakFromTimes.length, rec.breakToTimes.length); i++) {
+                                        if (rec.breakFromTimes[i] != null && !rec.breakFromTimes[i].isBlank()
+                                                && rec.breakToTimes[i] != null && !rec.breakToTimes[i].isBlank()) {
+                                            compactBreaks.add(formatCompactTimeRange(rec.breakFromTimes[i], rec.breakToTimes[i], true));
+                                        }
+                                    }
+                                }
+                                if (!compactBreaks.isEmpty()) cellContent += "\nBreaks: " + String.join("; ", compactBreaks);
                             } else if ("TOTAL".equals(rec.type)) {
-                                totalMinutes += parseDurationStringToMinutes(rec.totalTime);
-                                cellContent += " [" + rec.totalTime + " Hrs]";
+                                int workedMinutes = parseDurationStringToMinutes(rec.totalTime);
+                                totalMinutes += workedMinutes;
+                                cellContent = "Day " + day + " | Net " + formatWorkedTimeReadable(workedMinutes);
                             }
                         }
                     }
-                    dateCell.setCellValue(cellContent);
+                    org.apache.poi.xssf.usermodel.XSSFRichTextString richContent = new org.apache.poi.xssf.usermodel.XSSFRichTextString(cellContent);
+                    int dayLabelEnd = cellContent.indexOf(" | ");
+                    if (dayLabelEnd < 0) dayLabelEnd = cellContent.indexOf('\n');
+                    if (dayLabelEnd < 0) dayLabelEnd = cellContent.length();
+                    org.apache.poi.ss.usermodel.Font dayFont = col == 0 ? sundayDayFont : col == 6 ? saturdayDayFont : weekdayDayFont;
+                    richContent.applyFont(0, dayLabelEnd, dayFont);
+                    for (String label : new String[]{"Net", "Shift", "Breaks"}) {
+                        int labelStart = cellContent.indexOf(label);
+                        if (labelStart >= 0) richContent.applyFont(labelStart, labelStart + label.length(), boldLabelFont);
+                    }
+                    dateCell.setCellValue(richContent);
                     dateCell.setCellStyle(cellStyle);
+                    maxLinesInWeek = Math.max(maxLinesInWeek, estimateExcelLines(cellContent));
                     col++;
                     if (col > 6 && day < daysInMonth) {
+                        currentExcelRow.setHeightInPoints(Math.max(48, maxLinesInWeek * 13 + 8));
                         col = 0;
                         currentIdxRow++;
                         currentExcelRow = sheet.createRow(currentIdxRow);
                         currentExcelRow.setHeightInPoints(50);
+                        maxLinesInWeek = 1;
                     }
                 }
+                currentExcelRow.setHeightInPoints(Math.max(48, maxLinesInWeek * 13 + 8));
                 while (col <= 6) {
                     org.apache.poi.ss.usermodel.Cell emptyCell = currentExcelRow.createCell(col++);
                     emptyCell.setCellStyle(cellStyle);
                 }
+
+                // Keep records from every month in the workbook's detailed history sheet.
+                List<Map.Entry<String, TimeRecord>> allRecords = new ArrayList<>(pData.dateRecords.entrySet());
+                allRecords.sort(Map.Entry.comparingByKey());
+                for (Map.Entry<String, TimeRecord> recordEntry : allRecords) {
+                    String recordDate = recordEntry.getKey();
+                    TimeRecord record = recordEntry.getValue();
+                    if (record == null) continue;
+                    if ("CHECKED".equals(record.type)) {
+                        addTimeDetailRow(detailsSheet, detailRowIndex++, recordDate, "Checked", "—", record, "08:00", detailCellStyle);
+                    } else if ("FROM_TO".equals(record.type)) {
+                        int start = parseTimeStringToMinutes(record.fromTime);
+                        int end = parseTimeStringToMinutes(record.toTime);
+                        int workedMinutes = end >= start ? netWorkMinutes(record) : 0;
+                        String workedTime = String.format(Locale.ROOT, "%02d:%02d", workedMinutes / 60, workedMinutes % 60);
+                        String workPeriod = Objects.toString(record.fromTime, "") + " – " + Objects.toString(record.toTime, "");
+                        addTimeDetailRow(detailsSheet, detailRowIndex++, recordDate, "From/To", workPeriod, record, workedTime, detailCellStyle);
+                    } else if ("TOTAL".equals(record.type)) {
+                        addTimeDetailRow(detailsSheet, detailRowIndex++, recordDate, "Total time", "—", record,
+                                Objects.toString(record.totalTime, ""), detailCellStyle);
+                    }
+                }
+
                 int statStartRow = currentIdxRow + 2;
                 org.apache.poi.ss.usermodel.Row totalDaysRow = sheet.createRow(statStartRow);
                 totalDaysRow.setHeightInPoints(22);
@@ -946,6 +1287,15 @@ public class HelloApplication extends Application {
                 valTime.setCellValue(String.format("%d Hrs %02d Mins accumulated", finalHours, finalMins));
                 valTime.setCellStyle(footerStyle);
                 sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(statStartRow + 1, statStartRow + 1, 3, 6));
+                workbook.setPrintArea(0, 0, 6, 0, statStartRow + 1);
+                sheet.setAutobreaks(true);
+                sheet.setFitToPage(true);
+                sheet.getPrintSetup().setLandscape(true);
+                sheet.getPrintSetup().setPaperSize(org.apache.poi.ss.usermodel.PrintSetup.A4_PAPERSIZE);
+                sheet.getPrintSetup().setFitWidth((short) 1);
+                sheet.getPrintSetup().setFitHeight((short) 1);
+                workbook.setPrintArea(1, 0, 6, 0, Math.max(1, detailRowIndex - 1));
+                detailsSheet.setAutoFilter(new org.apache.poi.ss.util.CellRangeAddress(1, Math.max(1, detailRowIndex - 1), 0, 6));
                 for (int i = 0; i < 7; i++) {
                     sheet.setColumnWidth(i, 4800);
                 }
@@ -957,6 +1307,7 @@ public class HelloApplication extends Application {
             }
         }
     }
+    // Section: Excel cell formatting helpers
     private void setBorder(org.apache.poi.ss.usermodel.CellStyle style) {
         style.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
         style.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
@@ -967,7 +1318,64 @@ public class HelloApplication extends Application {
         style.setLeftBorderColor(org.apache.poi.ss.usermodel.IndexedColors.GREY_40_PERCENT.getIndex());
         style.setRightBorderColor(org.apache.poi.ss.usermodel.IndexedColors.GREY_40_PERCENT.getIndex());
     }
+
+    // Section: Format total work time for display
+    private String formatWorkedTimeReadable(int minutes) {
+        return (minutes / 60) + "h " + String.format(Locale.ROOT, "%02dm", minutes % 60);
+    }
+
+    // Section: Format compact work and break ranges for Excel
+    private String formatCompactTimeRange(String from, String to, boolean omitZeroMinutes) {
+        String[] fromParts = from.trim().toUpperCase(Locale.ROOT).split("\\s+");
+        String[] toParts = to.trim().toUpperCase(Locale.ROOT).split("\\s+");
+        String[] fromClock = fromParts[0].split(":");
+        String[] toClock = toParts[0].split(":");
+        int fromHour = Integer.parseInt(fromClock[0]);
+        int fromMinute = Integer.parseInt(fromClock[1]);
+        int toHour = Integer.parseInt(toClock[0]);
+        int toMinute = Integer.parseInt(toClock[1]);
+        String start = omitZeroMinutes && fromMinute == 0 ? Integer.toString(fromHour)
+                : String.format(Locale.ROOT, "%d:%02d", fromHour, fromMinute);
+        String end = omitZeroMinutes && toMinute == 0 ? Integer.toString(toHour)
+                : String.format(Locale.ROOT, "%d:%02d", toHour, toMinute);
+        String fromPeriod = fromParts[1], toPeriod = toParts[1];
+        if (fromPeriod.equals(toPeriod)) return start + "–" + end + " " + toPeriod;
+        return start + " " + fromPeriod + "–" + end + " " + toPeriod;
+    }
+
+    // Section: Estimate Excel calendar cell height
+    private int estimateExcelLines(String cellText) {
+        int lines = 0;
+        for (String line : cellText.split("\\n", -1)) lines += Math.max(1, (int) Math.ceil(line.length() / 18.0));
+        return lines;
+    }
+
+    // Section: Add one detailed work record to the Excel sheet
+    private void addTimeDetailRow(org.apache.poi.ss.usermodel.Sheet sheet, int rowIndex, String date,
+                                  String type, String workPeriod, TimeRecord record, String workedTime,
+                                  org.apache.poi.ss.usermodel.CellStyle style) {
+        org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIndex);
+        row.setHeightInPoints(24);
+        String[] values = {date, type, workPeriod,
+                formatBreakPeriod(record, 0), formatBreakPeriod(record, 1), formatBreakPeriod(record, 2), workedTime};
+        for (int i = 0; i < values.length; i++) {
+            org.apache.poi.ss.usermodel.Cell cell = row.createCell(i);
+            cell.setCellValue(values[i]);
+            cell.setCellStyle(style);
+        }
+    }
+
+    // Section: Format a recorded break for Excel
+    private String formatBreakPeriod(TimeRecord record, int breakIndex) {
+        if (record.breakFromTimes == null || record.breakToTimes == null
+                || breakIndex >= record.breakFromTimes.length || breakIndex >= record.breakToTimes.length) return "—";
+        String from = record.breakFromTimes[breakIndex], to = record.breakToTimes[breakIndex];
+        if (from == null || to == null || from.isBlank() || to.isBlank()) return "—";
+        return from + " – " + to;
+    }
+
     @SuppressWarnings("unchecked")
+    // Section: Load current and older Excel calendar files
     private void loadDataFromDisk() {
         File dir = new File(STORAGE_DIR_PATH);
         if (!dir.exists() || dir.listFiles() == null) return;
@@ -979,29 +1387,70 @@ public class HelloApplication extends Application {
                 try (FileInputStream fis = new FileInputStream(file);
                      org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(fis)) {
                     org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
+                    YearMonth workbookMonth = readWorkbookPeriod(sheet);
                     int rows = sheet.getPhysicalNumberOfRows();
                     for (int r = 3; r < rows; r++) {
                         org.apache.poi.ss.usermodel.Row row = sheet.getRow(r);
                         if (row == null) continue;
                         for (int c = 0; c < 7; c++) {
-// 🛠️ 🟢 [최종 정렬 픽스] Row.MissingCellPolicy 파싱 규칙을 완벽하게 통합 명시
                             org.apache.poi.ss.usermodel.Cell dateCell = row.getCell(c, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
                             if (dateCell != null && dateCell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
                                 String content = dateCell.getStringCellValue();
                                 if (content.contains("Day")) {
                                     String[] lines = content.split("\n");
-                                    String dayStr = lines[0].replace("Day", "").trim();
-                                    int dayVal = Integer.parseInt(dayStr);
-                                    String dateKey = currentYearMonth.atDay(dayVal).toString();
+                                    // Compatibility fix: accept both plain Day labels and labels with Net details.
+                                    java.util.regex.Matcher dayMatcher = java.util.regex.Pattern
+                                            .compile("Day\\s+(\\d+)").matcher(lines[0]);
+                                    if (!dayMatcher.find()) continue;
+                                    int dayVal;
+                                    try { dayVal = Integer.parseInt(dayMatcher.group(1)); }
+                                    catch (NumberFormatException ignored) { continue; }
+                                    if (dayVal < 1 || dayVal > workbookMonth.lengthOfMonth()) continue;
+                                    String dateKey = workbookMonth.atDay(dayVal).toString();
                                     if (lines.length > 1) {
                                         TimeRecord rec = new TimeRecord();
                                         String dataLine = lines[1].trim();
-                                        if (dataLine.contains("✔")) {
+                                        if (dataLine.contains("✔") || dataLine.toLowerCase(Locale.ROOT).contains("(checked)")) {
                                             rec.type = "CHECKED"; rec.isChecked = true;
+                                        } else if (dataLine.startsWith("Work: ")) {
+                                            rec.type = "FROM_TO";
+                                            String[] times = dataLine.substring("Work: ".length()).split(" – ", 2);
+                                            if (times.length == 2) { rec.fromTime = times[0]; rec.toTime = times[1]; }
+                                            for (int lineIndex = 2; lineIndex < lines.length; lineIndex++) {
+                                                String detail = lines[lineIndex].trim();
+                                                if (!detail.startsWith("Break ")) continue;
+                                                int colon = detail.indexOf(':');
+                                                if (colon < 0) continue;
+                                                try {
+                                                    int breakIndex = Integer.parseInt(detail.substring("Break ".length(), colon).trim()) - 1;
+                                                    String[] breakTimes = detail.substring(colon + 1).trim().split(" – ", 2);
+                                                    if (breakIndex >= 0 && breakIndex < 3 && breakTimes.length == 2) {
+                                                        rec.breakFromTimes[breakIndex] = breakTimes[0];
+                                                        rec.breakToTimes[breakIndex] = breakTimes[1];
+                                                    }
+                                                } catch (NumberFormatException ignored) { }
+                                            }
                                         } else if (dataLine.contains("~")) {
                                             rec.type = "FROM_TO";
-                                            String[] times = dataLine.replace("[", "").replace("]", "").split("~");
+                                            String timeData = dataLine.replace("[", "").replace("]", "");
+                                            String[] segments = timeData.split(";");
+                                            String[] times = segments[0].split("~");
                                             if (times.length == 2) { rec.fromTime = times[0]; rec.toTime = times[1]; }
+                                            for (int i = 1; i < segments.length; i++) {
+                                                String[] namedBreak = segments[i].split("=", 2);
+                                                if (namedBreak.length == 2 && namedBreak[0].startsWith("Break time ")) {
+                                                    try {
+                                                        int breakIndex = Integer.parseInt(namedBreak[0].substring("Break time ".length())) - 1;
+                                                        String[] breakTimes = namedBreak[1].split("~", 2);
+                                                        if (breakIndex >= 0 && breakIndex < 3 && breakTimes.length == 2) {
+                                                            rec.breakFromTimes[breakIndex] = breakTimes[0]; rec.breakToTimes[breakIndex] = breakTimes[1];
+                                                        }
+                                                    } catch (NumberFormatException ignored) { }
+                                                }
+                                            }
+                                        } else if (dataLine.startsWith("Total time: ")) {
+                                            rec.type = "TOTAL";
+                                            rec.totalTime = dataLine.substring("Total time: ".length()).trim();
                                         } else if (dataLine.contains("Hrs")) {
                                             rec.type = "TOTAL";
                                             rec.totalTime = dataLine.replace("[", "").replace("]", "").replace("Hrs", "").trim();
@@ -1012,12 +1461,48 @@ public class HelloApplication extends Application {
                             }
                         }
                     }
+                    if (workbook.getNumberOfSheets() > 1 && "Time Details".equals(workbook.getSheetName(1))) {
+                        pData.dateRecords.clear();
+                        org.apache.poi.ss.usermodel.Sheet detailSheet = workbook.getSheetAt(1);
+                        for (int r = 2; r <= detailSheet.getLastRowNum(); r++) {
+                            org.apache.poi.ss.usermodel.Row row = detailSheet.getRow(r);
+                            if (row == null || row.getCell(0) == null) continue;
+                            String dateKey = row.getCell(0).getStringCellValue();
+                            String type = row.getCell(1).getStringCellValue();
+                            TimeRecord rec = new TimeRecord();
+                            if ("Checked".equals(type)) {
+                                rec.type = "CHECKED"; rec.isChecked = true;
+                            } else if ("Total time".equals(type)) {
+                                rec.type = "TOTAL";
+                                rec.totalTime = row.getCell(6).getStringCellValue();
+                            } else if ("From/To".equals(type)) {
+                                rec.type = "FROM_TO";
+                                String[] workTimes = row.getCell(2).getStringCellValue().split(" – ", 2);
+                                if (workTimes.length == 2) { rec.fromTime = workTimes[0]; rec.toTime = workTimes[1]; }
+                                for (int i = 0; i < 3; i++) {
+                                    String breakPeriod = row.getCell(3 + i).getStringCellValue();
+                                    if (!"—".equals(breakPeriod)) {
+                                        String[] breakTimes = breakPeriod.split(" – ", 2);
+                                        if (breakTimes.length == 2) {
+                                            rec.breakFromTimes[i] = breakTimes[0]; rec.breakToTimes[i] = breakTimes[1];
+                                        }
+                                    }
+                                }
+                            } else continue;
+                            pData.dateRecords.put(dateKey, rec);
+                        }
+                    }
                     projectStorage.put(projectName, pData);
-                } catch (Exception e) { System.err.println(file.getName() + " 파싱 실패."); }
+                } catch (Exception e) {
+                    // Error handling: report a workbook that could not be read.
+                    System.err.println(file.getName() + " 파싱 실패.");
+                }
             }
         }
     }
+    // Section: Application logo graphic
     public static class AppLogoUI {
+        // Section: Draw the calendar logo and status indicator
         public static Pane createLogo(double size, boolean isDarkMode) {
             StackPane logoContainer = new StackPane();
             logoContainer.setPrefSize(size, size);
@@ -1030,7 +1515,6 @@ public class HelloApplication extends Application {
             double scale = (size / 24.0) * 0.55;
             calIcon.setScaleX(scale);
             calIcon.setScaleY(scale);
-// 🟢 오른쪽 하단 민트색 점 인디케이터 연동 복구 완료
             javafx.scene.shape.Circle checkedDot = new javafx.scene.shape.Circle(size * 0.12);
             checkedDot.setFill(Color.web("#00E5FF"));
             StackPane.setAlignment(checkedDot, Pos.BOTTOM_RIGHT);
@@ -1039,5 +1523,6 @@ public class HelloApplication extends Application {
             return logoContainer;
         }
     }
+    // Section: Application entry point
     public static void main(String[] args) { launch(args); }
 }
